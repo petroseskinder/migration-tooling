@@ -41,6 +41,7 @@ import org.apache.maven.model.building.ModelBuildingException;
 import org.apache.maven.model.building.ModelBuildingResult;
 import org.apache.maven.model.building.ModelSource;
 import org.apache.maven.model.building.UrlModelSource;
+import org.apache.maven.settings.building.DefaultSettingsBuildingRequest;
 import org.apache.maven.model.composition.DefaultDependencyManagementImporter;
 import org.apache.maven.model.management.DefaultDependencyManagementInjector;
 import org.apache.maven.model.management.DefaultPluginManagementInjector;
@@ -97,6 +98,8 @@ public class DefaultModelResolver implements ModelResolver {
   @Override
   public ModelSource resolveModel(String groupId, String artifactId, String version)
       throws UnresolvableModelException {
+    DefaultSettingsBuildingRequest request = new DefaultSettingsBuildingRequest();
+    // TODO(petros): remove line. Only using it to test adding a new dependency.
     String ruleName = Rule.name(groupId, artifactId);
     if (ruleNameToModelSource.containsKey(ruleName)) {
       return ruleNameToModelSource.get(ruleName);

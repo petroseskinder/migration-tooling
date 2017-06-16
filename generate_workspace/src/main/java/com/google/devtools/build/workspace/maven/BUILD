@@ -19,7 +19,7 @@ java_library(
         "@com_google_guava_guava//jar",
         "@com_google_code_findbugs_jsr305//jar",
         "@org_apache_maven_maven_artifact//jar",
-        "@org_apache_maven_maven_settings//jar",
+        "@org_apache_maven_maven_settings_builder//jar",
         "@org_codehaus_plexus_plexus_component_annotations//jar",
     ],
 )

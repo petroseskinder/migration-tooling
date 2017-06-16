@@ -14,12 +14,23 @@
 
 package com.google.devtools.build.workspace.maven;
 
-import static com.google.devtools.build.workspace.maven.Rule.MAVEN_CENTRAL_URL;
-import static java.util.stream.Collectors.toList;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.Parent;
+import org.apache.maven.model.Repository;
+import org.apache.maven.model.building.*;
+import org.apache.maven.model.composition.DefaultDependencyManagementImporter;
+import org.apache.maven.model.management.DefaultDependencyManagementInjector;
+import org.apache.maven.model.management.DefaultPluginManagementInjector;
+import org.apache.maven.model.plugin.DefaultPluginConfigurationExpander;
+import org.apache.maven.model.profile.DefaultProfileSelector;
+import org.apache.maven.model.resolution.ModelResolver;
+import org.apache.maven.model.resolution.UnresolvableModelException;
+import org.apache.maven.settings.building.DefaultSettingsBuildingRequest;
+import org.eclipse.aether.artifact.Artifact;
+
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.net.HttpURLConnection;
@@ -30,26 +41,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.Parent;
-import org.apache.maven.model.Repository;
-import org.apache.maven.model.building.DefaultModelBuilder;
-import org.apache.maven.model.building.DefaultModelBuilderFactory;
-import org.apache.maven.model.building.DefaultModelBuildingRequest;
-import org.apache.maven.model.building.FileModelSource;
-import org.apache.maven.model.building.ModelBuildingException;
-import org.apache.maven.model.building.ModelBuildingResult;
-import org.apache.maven.model.building.ModelSource;
-import org.apache.maven.model.building.UrlModelSource;
-import org.apache.maven.settings.building.DefaultSettingsBuildingRequest;
-import org.apache.maven.model.composition.DefaultDependencyManagementImporter;
-import org.apache.maven.model.management.DefaultDependencyManagementInjector;
-import org.apache.maven.model.management.DefaultPluginManagementInjector;
-import org.apache.maven.model.plugin.DefaultPluginConfigurationExpander;
-import org.apache.maven.model.profile.DefaultProfileSelector;
-import org.apache.maven.model.resolution.ModelResolver;
-import org.apache.maven.model.resolution.UnresolvableModelException;
-import org.eclipse.aether.artifact.Artifact;
+
+import static com.google.devtools.build.workspace.maven.Rule.MAVEN_CENTRAL_URL;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Resolver to find the repository a given Maven artifact should be fetched

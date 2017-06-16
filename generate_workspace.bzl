@@ -21,7 +21,7 @@
 # org.mockito:mockito-all:1.9.5
 # junit:junit:4.4
 # com.google.truth:truth:0.30
-# org.apache.maven:maven-settings:3.5.0
+# org.apache.maven:maven-settings-builder:3.5.0
 
 
 def generated_maven_jars():
@@ -31,11 +31,52 @@ def generated_maven_jars():
   )
 
 
+  # org.apache.maven:maven-builder-support:jar:3.5.0
+  # org.sonatype.plexus:plexus-sec-dispatcher:jar:1.4 wanted version 1.5.5
   # org.apache.maven:maven-artifact:jar:3.5.0
   # org.apache.maven:maven-settings:jar:3.5.0
+  # org.apache.maven:maven-settings-builder:jar:3.5.0
   native.maven_jar(
       name = "org_codehaus_plexus_plexus_utils",
       artifact = "org.codehaus.plexus:plexus-utils:3.0.24",
+  )
+
+
+  native.maven_jar(
+      name = "org_apache_maven_maven_settings_builder",
+      artifact = "org.apache.maven:maven-settings-builder:3.5.0",
+  )
+
+
+  # org.apache.maven:maven-settings-builder:jar:3.5.0
+  native.maven_jar(
+      name = "org_apache_maven_maven_builder_support",
+      artifact = "org.apache.maven:maven-builder-support:3.5.0",
+      sha1 = "9e2c5cfea0b1dd4868633ac0c0a496771219ec82",
+  )
+
+
+  # org.apache.maven:maven-settings-builder:jar:3.5.0
+  native.maven_jar(
+      name = "org_apache_maven_maven_settings",
+      artifact = "org.apache.maven:maven-settings:3.5.0",
+      sha1 = "3bee97b7653f28c3f620b1310714ee0a1d566e63",
+  )
+
+
+  # org.sonatype.plexus:plexus-sec-dispatcher:jar:1.4
+  native.maven_jar(
+      name = "org_sonatype_plexus_plexus_cipher",
+      artifact = "org.sonatype.plexus:plexus-cipher:1.4",
+      sha1 = "50ade46f23bb38cd984b4ec560c46223432aac38",
+  )
+
+
+  # org.apache.maven:maven-settings-builder:jar:3.5.0
+  native.maven_jar(
+      name = "org_sonatype_plexus_plexus_sec_dispatcher",
+      artifact = "org.sonatype.plexus:plexus-sec-dispatcher:1.4",
+      sha1 = "43fde524e9b94c883727a9fddb8669181b890ea7",
   )
 
 
@@ -57,7 +98,9 @@ def generated_maven_jars():
   )
 
 
+  # org.apache.maven:maven-builder-support:jar:3.5.0
   # org.apache.maven:maven-artifact:jar:3.5.0
+  # org.apache.maven:maven-settings-builder:jar:3.5.0
   native.maven_jar(
       name = "org_apache_commons_commons_lang3",
       artifact = "org.apache.commons:commons-lang3:3.5",
@@ -73,12 +116,6 @@ def generated_maven_jars():
   )
 
 
-  native.maven_jar(
-      name = "org_apache_maven_maven_settings",
-      artifact = "org.apache.maven:maven-settings:3.5.0",
-  )
-
-
   # com.google.truth:truth:jar:0.30 wanted version 19.0
   native.maven_jar(
       name = "com_google_guava_guava",
@@ -86,6 +123,7 @@ def generated_maven_jars():
   )
 
 
+  # org.apache.maven:maven-settings-builder:jar:3.5.0
   native.maven_jar(
       name = "org_codehaus_plexus_plexus_interpolation",
       artifact = "org.codehaus.plexus:plexus-interpolation:1.24",
@@ -99,6 +137,7 @@ def generated_maven_jars():
   )
 
 
+  # org.apache.maven:maven-settings-builder:jar:3.5.0
   native.maven_jar(
       name = "org_codehaus_plexus_plexus_component_annotations",
       artifact = "org.codehaus.plexus:plexus-component-annotations:1.7.1",
@@ -122,6 +161,64 @@ def generated_java_libraries():
       visibility = ["//visibility:public"],
       exports = [
           "@org_codehaus_plexus_plexus_utils//jar",
+      ],
+  )
+
+
+  native.java_library(
+      name = "org_apache_maven_maven_settings_builder",
+      visibility = ["//visibility:public"],
+      exports = [
+          "@org_apache_maven_maven_settings_builder//jar",
+          "@org_apache_commons_commons_lang3//jar",
+          "@org_apache_maven_maven_builder_support//jar",
+          "@org_apache_maven_maven_settings//jar",
+          "@org_codehaus_plexus_plexus_component_annotations//jar",
+          "@org_codehaus_plexus_plexus_interpolation//jar",
+          "@org_codehaus_plexus_plexus_utils//jar",
+          "@org_sonatype_plexus_plexus_cipher//jar",
+          "@org_sonatype_plexus_plexus_sec_dispatcher//jar",
+      ],
+  )
+
+
+  native.java_library(
+      name = "org_apache_maven_maven_builder_support",
+      visibility = ["//visibility:public"],
+      exports = [
+          "@org_apache_maven_maven_builder_support//jar",
+          "@org_apache_commons_commons_lang3//jar",
+          "@org_codehaus_plexus_plexus_utils//jar",
+      ],
+  )
+
+
+  native.java_library(
+      name = "org_apache_maven_maven_settings",
+      visibility = ["//visibility:public"],
+      exports = [
+          "@org_apache_maven_maven_settings//jar",
+          "@org_codehaus_plexus_plexus_utils//jar",
+      ],
+  )
+
+
+  native.java_library(
+      name = "org_sonatype_plexus_plexus_cipher",
+      visibility = ["//visibility:public"],
+      exports = [
+          "@org_sonatype_plexus_plexus_cipher//jar",
+      ],
+  )
+
+
+  native.java_library(
+      name = "org_sonatype_plexus_plexus_sec_dispatcher",
+      visibility = ["//visibility:public"],
+      exports = [
+          "@org_sonatype_plexus_plexus_sec_dispatcher//jar",
+          "@org_codehaus_plexus_plexus_utils//jar",
+          "@org_sonatype_plexus_plexus_cipher//jar",
       ],
   )
 
@@ -172,16 +269,6 @@ def generated_java_libraries():
       visibility = ["//visibility:public"],
       exports = [
           "@com_google_errorprone_error_prone_annotations//jar",
-      ],
-  )
-
-
-  native.java_library(
-      name = "org_apache_maven_maven_settings",
-      visibility = ["//visibility:public"],
-      exports = [
-          "@org_apache_maven_maven_settings//jar",
-          "@org_codehaus_plexus_plexus_utils//jar",
       ],
   )
 

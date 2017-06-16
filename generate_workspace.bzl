@@ -21,6 +21,7 @@
 # org.mockito:mockito-all:1.9.5
 # junit:junit:4.4
 # com.google.truth:truth:0.30
+# org.apache.maven:maven-settings:3.5.0
 
 
 def generated_maven_jars():
@@ -31,6 +32,7 @@ def generated_maven_jars():
 
 
   # org.apache.maven:maven-artifact:jar:3.5.0
+  # org.apache.maven:maven-settings:jar:3.5.0
   native.maven_jar(
       name = "org_codehaus_plexus_plexus_utils",
       artifact = "org.codehaus.plexus:plexus-utils:3.0.24",
@@ -68,6 +70,12 @@ def generated_maven_jars():
       name = "com_google_errorprone_error_prone_annotations",
       artifact = "com.google.errorprone:error_prone_annotations:2.0.8",
       sha1 = "54e2d56cb157df08cbf183149bcf50c9f5151ed4",
+  )
+
+
+  native.maven_jar(
+      name = "org_apache_maven_maven_settings",
+      artifact = "org.apache.maven:maven-settings:3.5.0",
   )
 
 
@@ -164,6 +172,16 @@ def generated_java_libraries():
       visibility = ["//visibility:public"],
       exports = [
           "@com_google_errorprone_error_prone_annotations//jar",
+      ],
+  )
+
+
+  native.java_library(
+      name = "org_apache_maven_maven_settings",
+      visibility = ["//visibility:public"],
+      exports = [
+          "@org_apache_maven_maven_settings//jar",
+          "@org_codehaus_plexus_plexus_utils//jar",
       ],
   )
 

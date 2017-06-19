@@ -3,6 +3,7 @@ java_library(
     srcs = [
         "DefaultModelResolver.java",
         "Resolver.java",
+        "VersionResolver.java",
     ],
     visibility = [
         "//generate_workspace/src/main/java/com/google/devtools/build/workspace:__pkg__",
@@ -20,6 +21,7 @@ java_library(
         "@com_google_code_findbugs_jsr305//jar",
         "@org_apache_maven_maven_artifact//jar",
         "@org_codehaus_plexus_plexus_component_annotations//jar",
+        "@org_jsoup_jsoup//jar",
     ],
 )
 

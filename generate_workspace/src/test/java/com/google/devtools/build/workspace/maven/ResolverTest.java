@@ -15,6 +15,7 @@
 package com.google.devtools.build.workspace.maven;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.devtools.build.workspace.maven.VersionResolver.resolveVersion;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -71,35 +72,35 @@ public class ResolverTest {
 
   @Test
   public void basicVersion() throws Exception {
-    assertThat(Resolver.resolveVersion(ARTIFACT_ID, GROUP_ID, "1.2.3"))
+    assertThat(resolveVersion(ARTIFACT_ID, GROUP_ID, "1.2.3"))
         .isEqualTo("1.2.3");
   }
 
   @Test
   public void exactVersion() throws Exception {
-    assertThat(Resolver.resolveVersion(ARTIFACT_ID, GROUP_ID, "[1.2.3]"))
+    assertThat(resolveVersion(ARTIFACT_ID, GROUP_ID, "[1.2.3]"))
         .isEqualTo("1.2.3");
   }
 
   @Test
   public void versionRange() throws Exception {
-    assertThat(Resolver.resolveVersion(ARTIFACT_ID, GROUP_ID, "[1.2.3,1.2.5]"))
+    assertThat(resolveVersion(ARTIFACT_ID, GROUP_ID, "[1.2.3,1.2.5]"))
         .isEqualTo("1.2.5");
   }
 
   @Test
   public void versionRangeExclusive() throws Exception {
-    assertThat(Resolver.resolveVersion(ARTIFACT_ID, GROUP_ID, "[1.2.3,1.2.5)"))
+    assertThat(resolveVersion(ARTIFACT_ID, GROUP_ID, "[1.2.3,1.2.5)"))
         .isEqualTo("1.2.3");
   }
 
   @Test(expected = Resolver.InvalidArtifactCoordinateException.class)
   public void versionRangeAllExclusive() throws Exception {
-    Resolver.resolveVersion(ARTIFACT_ID, GROUP_ID, "(1.2.3,1.2.5)");
+    resolveVersion(ARTIFACT_ID, GROUP_ID, "(1.2.3,1.2.5)");
   }
 
   @Test(expected = Resolver.InvalidArtifactCoordinateException.class)
   public void unparsableVersion() throws Exception {
-    Resolver.resolveVersion(ARTIFACT_ID, GROUP_ID, "[1.2.3");
+    resolveVersion(ARTIFACT_ID, GROUP_ID, "[1.2.3");
   }
 }

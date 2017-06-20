@@ -20,3 +20,14 @@ java_test(
         "@org_mockito_mockito_all//jar",
     ],
 )
+
+java_test(
+    name = "ShaDownloaderTest",
+    srcs = ["ShaDownloaderTest.java"],
+    deps = [
+        "//generate_workspace/src/main/java/com/google/devtools/build/workspace/maven",
+        "//generate_workspace/src/main/java/com/google/devtools/build/workspace/maven:rule",
+        "@com_google_truth_truth//jar",
+        "@junit_junit//jar",
+    ],
+)

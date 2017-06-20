@@ -101,9 +101,13 @@ public class DefaultModelResolver implements ModelResolver {
   public ModelSource resolveModel(String groupId, String artifactId, String version)
       throws UnresolvableModelException {
     String ruleName = Rule.name(groupId, artifactId);
+    // TODO(petros): change what the key value pairing is.
+    // This checks if we have already seen the model before.
     if (ruleNameToModelSource.containsKey(ruleName)) {
+      // This will only be called if we have seen a model before.
       return ruleNameToModelSource.get(ruleName);
     }
+    //
     for (Repository repository : repositories) {
       UrlModelSource modelSource = getModelSource(
           repository.getUrl(), groupId, artifactId, version);

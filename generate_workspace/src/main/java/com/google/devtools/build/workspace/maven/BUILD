@@ -4,6 +4,7 @@ java_library(
         "DefaultModelResolver.java",
         "Resolver.java",
         "VersionResolver.java",
+        "ShaDownloader.java",
     ],
     visibility = [
         "//generate_workspace/src/main/java/com/google/devtools/build/workspace:__pkg__",

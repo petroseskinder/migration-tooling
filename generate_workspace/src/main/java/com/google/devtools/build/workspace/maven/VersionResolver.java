@@ -44,6 +44,10 @@ class VersionResolver {
       throw new Resolver.InvalidArtifactCoordinateException("Invalid version: " + e.getLocalizedMessage()
           + " for " + groupId + ":" + artifactId + ":" + unparsedVersion);
     }
+    if (validVersions.isEmpty()) {
+      throw new Resolver.InvalidArtifactCoordinateException("Invalid version: "
+          + " for " + groupId + ":" + artifactId + ":" + unparsedVersion);
+    }
     // Heuristic
     return validVersions.get(validVersions.size()-1);
   }

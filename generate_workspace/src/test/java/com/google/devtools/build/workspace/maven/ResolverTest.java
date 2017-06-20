@@ -33,20 +33,6 @@ public class ResolverTest {
   private static final String ARTIFACT_ID = "y";
 
   @Test
-  public void testGetSha1Url() throws Exception {
-    assertThat(Resolver.getSha1Url("http://example.com/foo.pom", "jar"))
-        .isEqualTo("http://example.com/foo.jar.sha1");
-    assertThat(Resolver.getSha1Url("http://example.com/foo.pom", "aar"))
-        .isEqualTo("http://example.com/foo.aar.sha1");
-  }
-
-  @Test
-  public void testGetSha1UrlOnlyAtEOL() throws Exception {
-    assertThat(Resolver.getSha1Url("http://example.pom/foo.pom", "jar"))
-        .isEqualTo("http://example.pom/foo.jar.sha1");
-  }
-
-  @Test
   public void testArtifactResolution() throws Exception {
     DefaultModelResolver modelResolver = Mockito.mock(DefaultModelResolver.class);
     Resolver resolver = new Resolver(modelResolver);
@@ -55,19 +41,6 @@ public class ResolverTest {
     assertThat(rules).hasSize(1);
     Rule rule = rules.iterator().next();
     assertThat(rule.name()).isEqualTo("x_y");
-  }
-
-  @Test
-  public void testExtractSha1() {
-    assertThat(Resolver.extractSha1("5fe28b9518e58819180a43a850fbc0dd24b7c050"))
-        .isEqualTo("5fe28b9518e58819180a43a850fbc0dd24b7c050");
-
-    assertThat(Resolver.extractSha1("5fe28b9518e58819180a43a850fbc0dd24b7c050\n"))
-        .isEqualTo("5fe28b9518e58819180a43a850fbc0dd24b7c050");
-
-    assertThat(Resolver.extractSha1(
-         "83cd2cd674a217ade95a4bb83a8a14f351f48bd0  /home/maven/repository-staging/to-ibiblio/maven2/antlr/antlr/2.7.7/antlr-2.7.7.jar"))
-        .isEqualTo("83cd2cd674a217ade95a4bb83a8a14f351f48bd0");
   }
 
   @Test

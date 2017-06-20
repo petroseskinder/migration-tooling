@@ -16,7 +16,6 @@ package com.google.devtools.build.workspace.maven;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.io.CharStreams;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
@@ -32,17 +31,14 @@ import org.eclipse.aether.artifact.DefaultArtifact;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.lang.invoke.MethodHandles;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import static com.google.devtools.build.workspace.maven.ShaDownloader.downloadSha1;
 import static com.google.devtools.build.workspace.maven.VersionResolver.resolveVersion;
 
 /**
@@ -52,31 +48,6 @@ public class Resolver {
 
   private final static Logger logger = Logger.getLogger(
       MethodHandles.lookup().lookupClass().getName());
-
-  /**
-   * Exception thrown if an artifact coordinate could not be parsed.
-   */
-  public static class InvalidArtifactCoordinateException extends Exception {
-    InvalidArtifactCoordinateException(String message) {
-      super(message);
-    }
-  }
-  
-  static Artifact getArtifact(String atrifactCoords)
-      throws InvalidArtifactCoordinateException {
-    try {
-      return new DefaultArtifact(atrifactCoords);
-    } catch (IllegalArgumentException e) {
-      throw new InvalidArtifactCoordinateException(e.getMessage());
-    }
-  }
-
-  private static Artifact getArtifact(Dependency dependency)
-      throws InvalidArtifactCoordinateException{
-    return getArtifact(dependency.getGroupId() + ":" + dependency.getArtifactId() + ":"
-        + resolveVersion(
-            dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion()));
-  }
 
   private static final String COMPILE_SCOPE = "compile";
 
@@ -102,8 +73,50 @@ public class Resolver {
   }
 
   /**
+   * Resolves an artifact as a root of a dependency graph.
+   */
+  public void resolveArtifact(String artifactCoord) {
+    // This method is only called from the original generate_workspace function
+    // so each of the artifacts, you actually know exactly what version they are.
+    // however, it still can be a range, or a blank.
+    // TODO how does this behave if you pass it a weird version range
+    Artifact artifact;
+    ModelSource modelSource;
+    try {
+
+      // This is only downloaded once, and again you should use the highest version.
+      // This simply creates the artifact, given the coordinates.
+      // It does nothing to the actual version, like selecting the version.
+      // e.g. com.treasuredata.client:td-client:jar:[0.7,)
+      artifact = getArtifact(artifactCoord);
+
+      // goes and attempts to resolve a specific artifact
+      // This means going to each repository, and then, constructing
+      // a URL from the model name (implicitly creating a version), and
+      // trying to download the pom file for that version.
+      // If the artifact exists already, it calls it quits. TODO fix that.
+      // This just gets the model source rather than construct the
+      // actual graph of dependencies.
+      modelSource = modelResolver.resolveModel(artifact);
+    } catch (UnresolvableModelException | InvalidArtifactCoordinateException e) {
+      logger.warning(e.getMessage());
+      return;
+    }
+
+    Rule rule = new Rule(artifact);
+    deps.put(rule.name(), rule); // add the artifact rule to the workspace
+
+    // takes the model source obtained before and constructs a dependency graph
+    // by downloading the poms and recursively attacking each dependent node.
+    // from those dependencies.
+    resolveEffectiveModel(modelSource, Sets.<String>newHashSet(), rule);
+  }
+
+
+  /**
    * Given a local path to a Maven project, this attempts to find the transitive dependencies of
    * the project.
+   *
    * @param projectPath The path to search for Maven projects.
    */
   public String resolvePomDependencies(String projectPath) {
@@ -119,25 +132,7 @@ public class Resolver {
     return pom.getAbsolutePath();
   }
 
-  /**
-   * Resolves an artifact as a root of a dependency graph.
-   */
-  public void resolveArtifact(String artifactCoord) {
-    Artifact artifact;
-    ModelSource modelSource;
-    try {
-      artifact = getArtifact(artifactCoord);
-      modelSource = modelResolver.resolveModel(artifact);
-    } catch (UnresolvableModelException | InvalidArtifactCoordinateException e) {
-      logger.warning(e.getMessage());
-      return;
-    }
 
-    Rule rule = new Rule(artifact);
-    deps.put(rule.name(), rule); // add the artifact rule to the workspace
-    resolveEffectiveModel(modelSource, Sets.<String>newHashSet(), rule);
-  }
-  
   /**
    * Resolves all dependencies from a given "model source," which could be either a URL or a local
    * file.
@@ -149,8 +144,9 @@ public class Resolver {
       return;
     }
     logger.info("\tDownloading pom for " + model.getGroupId() + ":"
-            + model.getArtifactId() + ":" + model.getVersion());
+        + model.getArtifactId() + ":" + model.getVersion());
     for (Repository repo : model.getRepositories()) {
+      // FIXME Why is this being called every iteration????
       modelResolver.addRepository(repo);
     }
 
@@ -176,7 +172,7 @@ public class Resolver {
               dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion());
           if (depModelSource != null) {
             artifactRule.setRepository(depModelSource.getLocation());
-            artifactRule.setSha1(downloadSha1(artifactRule));
+            artifactRule.setSha1(downloadSha1(artifactRule, logger));
             resolveEffectiveModel(depModelSource, localDepExclusions, artifactRule);
           } else {
             logger.warning("Could not get a model for " + dependency);
@@ -231,11 +227,26 @@ public class Resolver {
         resolveSourceLocations(new FileModelSource(parentPom));
       }
     }
-
     // Submodules.
     for (String module : model.getModules()) {
       resolveSourceLocations(new FileModelSource(new File(pomDirectory, module + "/pom.xml")));
     }
+  }
+
+  static Artifact getArtifact(String artifactCoords)
+      throws InvalidArtifactCoordinateException {
+    try {
+      return new DefaultArtifact(artifactCoords);
+    } catch (IllegalArgumentException e) {
+      throw new InvalidArtifactCoordinateException(e.getMessage());
+    }
+  }
+
+  private static Artifact getArtifact(Dependency dependency)
+      throws InvalidArtifactCoordinateException {
+    return getArtifact(dependency.getGroupId() + ":" + dependency.getArtifactId() + ":"
+        + resolveVersion(
+        dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion()));
   }
 
   /**
@@ -255,35 +266,17 @@ public class Resolver {
       }
       return false;
     }
-
     deps.put(artifactName, dependency);
     dependency.addParent(parent);
     return true;
   }
 
-  static String getSha1Url(String url, String extension) {
-    return url.replaceAll(".pom$", "." + extension + ".sha1");
-  }
-
   /**
-   * Downloads the SHA-1 for the given artifact.
+   * Exception thrown if an artifact coordinate could not be parsed.
    */
-  private String downloadSha1(Rule rule) {
-    String sha1Url = getSha1Url(rule.getUrl(), rule.getArtifact().getExtension());
-    try {
-      HttpURLConnection connection = (HttpURLConnection) new URL(sha1Url).openConnection();
-      connection.setInstanceFollowRedirects(true);
-      connection.connect();
-      return extractSha1(
-          CharStreams.toString(
-              new InputStreamReader(connection.getInputStream(), Charset.defaultCharset())));
-    } catch (IOException e) {
-      logger.warning("Failed to download the sha1 at " + sha1Url);
+  public static class InvalidArtifactCoordinateException extends Exception {
+    InvalidArtifactCoordinateException(String message) {
+      super(message);
     }
-    return null;
-  }
-
-  static String extractSha1(String sha1Contents) {
-    return sha1Contents.split("\\s+")[0];
   }
 }

@@ -85,6 +85,7 @@ public class GenerateWorkspace {
   }
 
   private void generateFromArtifacts(List<String> artifacts) {
+
     for (String artifactCoord : artifacts) {
       inputs.add(artifactCoord);
       resolver.resolveArtifact(artifactCoord);

@@ -14,22 +14,9 @@
 
 package com.google.devtools.build.workspace.maven;
 
-import static com.google.devtools.build.workspace.maven.Rule.MAVEN_CENTRAL_URL;
-import static java.util.stream.Collectors.toList;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Logger;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.apache.maven.model.Repository;
@@ -38,6 +25,7 @@ import org.apache.maven.model.building.DefaultModelBuilderFactory;
 import org.apache.maven.model.building.DefaultModelBuildingRequest;
 import org.apache.maven.model.building.FileModelSource;
 import org.apache.maven.model.building.ModelBuildingException;
+import org.apache.maven.model.building.ModelBuildingRequest;
 import org.apache.maven.model.building.ModelBuildingResult;
 import org.apache.maven.model.building.ModelSource;
 import org.apache.maven.model.building.UrlModelSource;
@@ -49,6 +37,20 @@ import org.apache.maven.model.profile.DefaultProfileSelector;
 import org.apache.maven.model.resolution.ModelResolver;
 import org.apache.maven.model.resolution.UnresolvableModelException;
 import org.eclipse.aether.artifact.Artifact;
+
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Logger;
+
+import static com.google.devtools.build.workspace.maven.Rule.MAVEN_CENTRAL_URL;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Resolver to find the repository a given Maven artifact should be fetched
@@ -213,6 +215,9 @@ public class DefaultModelResolver implements ModelResolver {
     DefaultModelBuildingRequest request = new DefaultModelBuildingRequest();
     request.setModelResolver(this);
     request.setModelSource(modelSource);
+    // Without this, it fails to a resolve if one of the dependencies doesn't explicitly state a version,
+    // or if they include a dependencyManagement section.
+    request.setValidationLevel(ModelBuildingRequest.VALIDATION_LEVEL_MINIMAL);
     Model model;
     try {
       ModelBuildingResult result = modelBuilder.build(request);

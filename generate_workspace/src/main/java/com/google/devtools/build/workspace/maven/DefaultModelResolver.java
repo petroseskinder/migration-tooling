@@ -71,6 +71,7 @@ public class DefaultModelResolver implements ModelResolver {
   private final Set<Repository> repositories;
   private final Map<String, ModelSource> ruleNameToModelSource;
   private final DefaultModelBuilder modelBuilder;
+  private final VersionResolver versionResolver;
 
   public DefaultModelResolver() {
     this(
@@ -90,6 +91,7 @@ public class DefaultModelResolver implements ModelResolver {
     this.repositories = repositories;
     this.ruleNameToModelSource = ruleNameToModelSource;
     this.modelBuilder = modelBuilder;
+    this.versionResolver = new VersionResolver();
   }
 
   public ModelSource resolveModel(Artifact artifact) throws UnresolvableModelException {
@@ -123,7 +125,7 @@ public class DefaultModelResolver implements ModelResolver {
       String url, String groupId, String artifactId, String version)
       throws UnresolvableModelException {
     try {
-      version = Resolver.resolveVersion(groupId, artifactId, version);
+      version = versionResolver.resolveVersion(groupId, artifactId, version);
     } catch (Resolver.InvalidArtifactCoordinateException e) {
       throw new UnresolvableModelException(
           "Unable to resolve version", groupId, artifactId, version, e);
@@ -246,5 +248,9 @@ public class DefaultModelResolver implements ModelResolver {
       return null;
     }
     return model;
+  }
+
+  String resolveVersion(String groupId, String artifactId, String versionSpec) throws Resolver.InvalidArtifactCoordinateException {
+    return versionResolver.resolveVersion(groupId, artifactId, versionSpec);
   }
 }

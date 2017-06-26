@@ -18,9 +18,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.CharStreams;
-import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
-import org.apache.maven.artifact.versioning.Restriction;
-import org.apache.maven.artifact.versioning.VersionRange;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Exclusion;
 import org.apache.maven.model.Model;
@@ -45,7 +42,6 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -68,19 +64,19 @@ public class Resolver {
     }
   }
   
-  public static Artifact getArtifact(String atrifactCoords)
+  public static Artifact getArtifact(String artifactCoords)
       throws InvalidArtifactCoordinateException {
     try {
-      return new DefaultArtifact(atrifactCoords);
+      return new DefaultArtifact(artifactCoords);
     } catch (IllegalArgumentException e) {
       throw new InvalidArtifactCoordinateException(e.getMessage());
     }
   }
 
-  private static Artifact getArtifact(Dependency dependency)
+  private Artifact getArtifact(Dependency dependency)
       throws InvalidArtifactCoordinateException {
     return getArtifact(dependency.getGroupId() + ":" + dependency.getArtifactId() + ":"
-        + resolveVersion(
+        + modelResolver.resolveVersion(
             dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion()));
   }
 
@@ -91,45 +87,6 @@ public class Resolver {
   private static String unversionedCoordinate(Exclusion exclusion) {
     return exclusion.getGroupId() + ":" + exclusion.getArtifactId();
   }
-
-  /**
-   * Takes a version specification (as defined in
-   * http://maven.apache.org/enforcer/enforcer-rules/versionRanges.html) and finds a valid version
-   * that is likely to exist.  Basically: 1.2.3 is 1.2.3+, [1.2.3] is exactly 1.2.3, and then
-   * there is comma-separated range notation.
-   */
-  static String resolveVersion(String groupId, String artifactId, String unparsedVersion)
-      throws InvalidArtifactCoordinateException {
-    VersionRange versionRange;
-    try {
-      versionRange = VersionRange.createFromVersionSpec(unparsedVersion);
-    } catch (InvalidVersionSpecificationException e) {
-      throw new InvalidArtifactCoordinateException("Invalid version: " + e.getLocalizedMessage()
-          + " for " + groupId + ":" + artifactId + ":" + unparsedVersion);
-    }
-    if (versionRange.getRecommendedVersion() != null) {
-      return versionRange.getRecommendedVersion().toString();
-    }
-
-    // There is a range or set of possible versions.
-    for (Restriction restriction : versionRange.getRestrictions()) {
-      // Look for an exact match.
-      if (restriction.getLowerBound().equals(restriction.getUpperBound())) {
-        return restriction.getLowerBound().toString();
-      }
-      // If this is a more complex version restriction, look for an inclusive bound.
-      if (restriction.isUpperBoundInclusive()) {
-        return restriction.getUpperBound().toString();
-      } else if (restriction.isLowerBoundInclusive()) {
-        return restriction.getLowerBound().toString();
-      }
-      // All bounds were exclusive.
-    }
-
-    // TODO(kchodorow): figure out a version in another way.
-    throw new InvalidArtifactCoordinateException("Unable to find a version for " + groupId + ":"
-        + artifactId + ":" + unparsedVersion);
-  }
   
   private static final String COMPILE_SCOPE = "compile";
 
@@ -138,10 +95,11 @@ public class Resolver {
   // Mapping of maven_jar name to Rule.
   private final Map<String, Rule> deps;
 
-  public Resolver(DefaultModelResolver resolver, List<Rule> aliases) {
+//  public Resolver(DefaultModelResolver resolver, List<Rule> aliases) {
+  public Resolver(DefaultModelResolver resolver) {
     this.deps = Maps.newHashMap();
     this.modelResolver = resolver;
-    aliases.forEach(alias -> addArtifact(alias, TOP_LEVEL_ARTIFACT));
+//    aliases.forEach(alias -> addArtifact(alias, TOP_LEVEL_ARTIFACT));
   }
 
   /**

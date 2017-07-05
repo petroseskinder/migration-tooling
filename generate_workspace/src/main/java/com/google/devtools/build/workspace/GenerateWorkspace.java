@@ -17,16 +17,19 @@ package com.google.devtools.build.workspace;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.Lists;
-import com.google.devtools.build.workspace.maven.DefaultModelResolver;
-import com.google.devtools.build.workspace.maven.Resolver;
-import com.google.devtools.build.workspace.maven.Rule;
+import com.google.devtools.build.workspace.maven.ArtifactResolver;
+import com.google.devtools.build.workspace.maven.GraphSerializer;
+import com.google.devtools.build.workspace.maven.MavenJarRule;
+import com.google.devtools.build.workspace.maven.PomFileParser;
 import com.google.devtools.build.workspace.output.AbstractWriter;
 import com.google.devtools.build.workspace.output.BzlWriter;
 import com.google.devtools.build.workspace.output.WorkspaceWriter;
+import org.eclipse.aether.graph.DependencyNode;
+
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
-import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -36,10 +39,6 @@ public class GenerateWorkspace {
 
   private final static Logger logger = Logger.getLogger(
       MethodHandles.lookup().lookupClass().getName());
-
-  private final Resolver resolver;
-  private final List<String> inputs;
-  private final AbstractWriter resultWriter;
 
   public static void main(String[] args) throws InterruptedException {
     GenerateWorkspaceOptions options = new GenerateWorkspaceOptions();
@@ -51,53 +50,37 @@ public class GenerateWorkspace {
       optionParser.usage();
       return;
     }
+
     if (options.mavenProjects.isEmpty() && options.artifacts.isEmpty()) {
       optionParser.usage();
       return;
     }
 
     try {
-      GenerateWorkspace workspaceFileGenerator = new GenerateWorkspace(
-          args, options.outputDir, options.directToWorkspace, options.aliases);
-      workspaceFileGenerator.generateFromPom(options.mavenProjects);
-      workspaceFileGenerator.generateFromArtifacts(options.artifacts);
-      workspaceFileGenerator.writeResults();
+      List<String> artifacts = getArtifacts(options.mavenProjects, options.artifacts);
+      ArtifactResolver artifactResolver = new ArtifactResolver();
+      DependencyNode root = artifactResolver.resolveArtifacts(artifacts);
+      Set<MavenJarRule> buildRules = GraphSerializer.generateBuildRules(root);
+      AbstractWriter resultWriter = getResultWriter(args, options.outputDir, options.directToWorkspace);
+      resultWriter.write(buildRules);
+
     } catch (IOException e) {
       logger.severe(e.getMessage());
       System.exit(1);
     }
   }
 
-  private GenerateWorkspace(String[] args, String outputDirStr, boolean directToWorkspace, List<Rule> aliases)
-      throws IOException {
-    this.resolver = new Resolver(new DefaultModelResolver(), aliases);
-    this.inputs = Lists.newArrayList();
-    this.resultWriter = directToWorkspace
-        ? new WorkspaceWriter(args, outputDirStr)
-        : new BzlWriter(args, outputDirStr);
+  private static AbstractWriter getResultWriter(
+      String[] args, String outputDirStr, boolean directToWorkspace) throws IOException {
+    return directToWorkspace ? new WorkspaceWriter(args, outputDirStr) : new BzlWriter(args, outputDirStr);
   }
 
-  private void generateFromPom(List<String> projects) {
-    for (String project : projects) {
-      String pomFile = resolver.resolvePomDependencies(getAbsolute(project));
-      if (pomFile != null) {
-        inputs.add(pomFile);
-      }
-    }
+  private static List<String> getArtifacts(List<String> projects, List<String> mavenCoordinates) {
+    List<String> artifacts = Lists.newArrayList();
+    PomFileParser parser = new PomFileParser();
+    artifacts.addAll(parser.parsePomFiles(projects));
+    artifacts.addAll(mavenCoordinates);
+    return artifacts;
   }
 
-  private void generateFromArtifacts(List<String> artifacts) {
-    for (String artifactCoord : artifacts) {
-      inputs.add(artifactCoord);
-      resolver.resolveArtifact(artifactCoord);
-    }
-  }
-
-  private String getAbsolute(String path) {
-    return Paths.get(System.getProperty("user.dir")).resolve(path).toString();
-  }
-
-  private void writeResults() {
-    resultWriter.write(resolver.getRules());
-  }
 }

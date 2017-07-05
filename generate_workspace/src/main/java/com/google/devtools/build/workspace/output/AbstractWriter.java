@@ -14,7 +14,8 @@
 
 package com.google.devtools.build.workspace.output;
 
-import com.google.devtools.build.workspace.maven.Rule;
+import com.google.devtools.build.workspace.maven.MavenJarRule;
+
 import java.io.PrintStream;
 import java.util.Collection;
 import java.util.Set;
@@ -23,7 +24,10 @@ import java.util.Set;
  * Basic implementation for output writers.
  */
 public abstract class AbstractWriter {
-  public abstract void write(Collection<Rule> rules);
+
+  public static final String MINOR_INDENT = "  ";
+  public static final String MAJOR_INDENT = "    ";
+  public abstract void write(Collection<MavenJarRule> rules);
 
   /**
    * Writes the list of sources as a comment to outputStream.
@@ -35,7 +39,7 @@ public abstract class AbstractWriter {
     outputStream.print("\n\n");
   }
 
-  protected String formatMavenJar(Rule rule, String ruleName, String indent) {
+  String formatMavenJar(MavenJarRule rule, String ruleName, String indent) {
     if (rule.aliased()) {
       // If the rule was aliased, then it is already declared somewhere else and we don't need to
       // declare it again.
@@ -46,15 +50,16 @@ public abstract class AbstractWriter {
       builder.append(indent).append("# ").append(parent).append("\n");
     }
     builder.append(indent).append(ruleName).append("(\n");
-    builder.append(indent).append("    name = \"").append(rule.name()).append("\",\n");
-    builder.append(indent).append("    artifact = \"").append(rule.toMavenArtifactString())
+    builder.append(indent).append(MAJOR_INDENT).append("name = \"").append(rule.name()).append("\",\n");
+    builder.append(indent).append(MAJOR_INDENT).append("artifact = \"").append(rule.toMavenArtifactString())
         .append("\",\n");
     if (rule.hasCustomRepository()) {
-      builder.append(indent).append("    repository = \"").append(rule.getRepository())
+      System.out.println("HAS CUSTOM REPOSITORY" + rule.getRepository());
+      builder.append(indent).append(MAJOR_INDENT).append("repository = \"").append(rule.getRepository())
           .append("\",\n");
     }
     if (rule.getSha1() != null) {
-      builder.append(indent).append("    sha1 = \"").append(rule.getSha1()).append("\",\n");
+      builder.append(indent).append(MAJOR_INDENT).append("sha1 = \"").append(rule.getSha1()).append("\",\n");
     }
     builder.append(indent).append(")\n\n");
     return builder.toString();
@@ -63,21 +68,22 @@ public abstract class AbstractWriter {
   /**
    * Write library rules to depend on the transitive closure of all of these rules.
    */
-  protected String formatJavaLibrary(Rule rule, String ruleName, String indent) {
+  String formatJavaLibrary(MavenJarRule rule, String ruleName, String indent) {
     StringBuilder builder = new StringBuilder();
     builder.append(indent).append(ruleName).append("(\n");
-    builder.append(indent).append("    name = \"").append(rule.name()).append("\",\n");
-    builder.append(indent).append("    visibility = [\"//visibility:public\"],\n");
-    builder.append(indent).append("    exports = [\"@").append(rule.name()).append("//jar\"],\n");
-    Set<Rule> dependencies = rule.getDependencies();
+    builder.append(indent).append(MAJOR_INDENT).append("name = \"").append(rule.name()).append("\",\n");
+    builder.append(indent).append(MAJOR_INDENT).append("visibility = [\"//visibility:public\"],\n");
+    builder.append(indent).append(MAJOR_INDENT).append("exports = [\"@").append(rule.name()).append("//jar\"],\n");
+    Set<String> dependencies = rule.getDependencies();
     if (!dependencies.isEmpty()) {
-      builder.append(indent).append("    runtime_deps = [\n");
-      for (Rule r : rule.getDependencies()) {
-        builder.append(indent).append("        \":").append(r.name()).append("\",\n");
+      builder.append(indent).append(MAJOR_INDENT).append("runtime_deps = [\n");
+      for (String dep : rule.getDependencies()) {
+        builder.append(indent).append(MAJOR_INDENT).append(MAJOR_INDENT).append("\":").append(dep).append("\",\n");
       }
-      builder.append(indent).append("    ],\n");
+      builder.append(indent).append(MAJOR_INDENT).append("],\n");
     }
     builder.append(indent).append(")\n\n");
     return builder.toString();
   }
+
 }

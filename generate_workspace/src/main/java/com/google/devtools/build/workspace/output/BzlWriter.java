@@ -14,7 +14,7 @@
 
 package com.google.devtools.build.workspace.output;
 
-import com.google.devtools.build.workspace.maven.Rule;
+import com.google.devtools.build.workspace.maven.MavenJarRule;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
@@ -40,7 +40,7 @@ public class BzlWriter extends AbstractWriter {
   }
 
   @Override
-  public void write(Collection<Rule> rules) {
+  public void write(Collection<MavenJarRule> rules) {
     try (PrintStream outputStream = new PrintStream(generatedFile.toFile())) {
       writeBzl(outputStream, rules);
     } catch (IOException e) {
@@ -50,14 +50,14 @@ public class BzlWriter extends AbstractWriter {
     System.out.println("Wrote " + generatedFile.toAbsolutePath());
   }
 
-  private void writeBzl(PrintStream outputStream, Collection<Rule> rules) {
+  private void writeBzl(PrintStream outputStream, Collection<MavenJarRule> rules) {
     writeHeader(outputStream, argv);
     outputStream.println("def generated_maven_jars():");
     if (rules.isEmpty()) {
       outputStream.println("  pass\n");
     }
-    for (Rule rule : rules) {
-      outputStream.println(formatMavenJar(rule, "native.maven_jar", "  "));
+    for (MavenJarRule rule : rules) {
+      outputStream.println(formatMavenJar(rule, "native.maven_jar", MINOR_INDENT));
     }
 
     outputStream.append("\n\n");
@@ -66,8 +66,8 @@ public class BzlWriter extends AbstractWriter {
     if (rules.isEmpty()) {
       outputStream.println("  pass\n");
     }
-    for (Rule rule : rules) {
-      outputStream.println(formatJavaLibrary(rule, "native.java_library", "  "));
+    for (MavenJarRule rule : rules) {
+      outputStream.println(formatJavaLibrary(rule, "native.java_library", MINOR_INDENT));
     }
   }
 }

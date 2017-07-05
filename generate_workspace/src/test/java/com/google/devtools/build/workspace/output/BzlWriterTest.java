@@ -15,13 +15,17 @@
 package com.google.devtools.build.workspace.output;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.devtools.build.workspace.output.AbstractWriter.MAJOR_INDENT;
+import static com.google.devtools.build.workspace.output.AbstractWriter.MINOR_INDENT;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
-import com.google.devtools.build.workspace.maven.Rule;
+import com.google.devtools.build.workspace.maven.MavenJarRule;
+
 import java.io.File;
 import java.nio.charset.Charset;
 import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.graph.DefaultDependencyNode;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -29,6 +33,7 @@ import org.junit.runners.JUnit4;
 /**
  * Test the .bzl output writer.
  */
+//TODO(petros): add tests for aliases.
 @RunWith(JUnit4.class)
 public class BzlWriterTest {
 
@@ -46,30 +51,23 @@ public class BzlWriterTest {
   @Test
   public void writeRules() throws Exception {
     BzlWriter writer = new BzlWriter(new String[]{}, System.getenv("TEST_TMPDIR"));
-    writer.write(ImmutableList.of(new Rule(new DefaultArtifact("x:y:1.2.3"))));
+    writer.write(ImmutableList.of(createRule("x:y:1.2.3")));
     String fileContents = Files.toString(
         new File(System.getenv("TEST_TMPDIR") + "/generate_workspace.bzl"),
         Charset.defaultCharset());
-    assertThat(fileContents).contains("def generated_maven_jars():\n  native.maven_jar(\n"
-        + "      name = \"x_y\",\n"
-        + "      artifact = \"x:y:1.2.3\",\n"
-        + "  )\n");
-    assertThat(fileContents).contains("def generated_java_libraries():\n  native.java_library(\n"
-        + "      name = \"x_y\",\n"
-        + "      visibility = [\"//visibility:public\"],\n"
-        + "      exports = [\"@x_y//jar\"],\n"
-        + "  )\n");
-  }
 
-  @Test
-  public void writeAlias() throws Exception {
-    BzlWriter writer = new BzlWriter(new String[]{}, System.getenv("TEST_TMPDIR"));
-    writer.write(ImmutableList.of(new Rule(new DefaultArtifact("x:y:1.2.3"), "z")));
-    String fileContents = Files.toString(
-        new File(System.getenv("TEST_TMPDIR") + "/generate_workspace.bzl"),
-        Charset.defaultCharset());
-    assertThat(fileContents).doesNotContain("x:y:1.2.3");
-    assertThat(fileContents).contains("exports = [\"@z//jar\"],");
+    assertThat(fileContents).contains("def generated_maven_jars():\n"
+        + MINOR_INDENT + "native.maven_jar(\n"
+        + MINOR_INDENT + MAJOR_INDENT + "name = \"x_y\",\n"
+        + MINOR_INDENT + MAJOR_INDENT + "artifact = \"x:y:1.2.3\",\n"
+        + MINOR_INDENT + ")\n");
+
+    assertThat(fileContents).contains("def generated_java_libraries():\n"
+        + MINOR_INDENT + "native.java_library(\n"
+        + MINOR_INDENT + MAJOR_INDENT + "name = \"x_y\",\n"
+        + MINOR_INDENT + MAJOR_INDENT + "visibility = [\"//visibility:public\"],\n"
+        + MINOR_INDENT + MAJOR_INDENT + "exports = [\"@x_y//jar\"],\n"
+        + MINOR_INDENT + ")\n");
   }
   
   public void writeCommand() throws Exception {
@@ -79,5 +77,10 @@ public class BzlWriterTest {
         new File(System.getenv("TEST_TMPDIR") + "/generate_workspace.bzl"),
         Charset.defaultCharset());
     assertThat(fileContents).contains("# generate_workspace x y z");
+  }
+
+  private MavenJarRule createRule(String mavenCoordinate) {
+    return new MavenJarRule(
+        new DefaultDependencyNode(new DefaultArtifact(mavenCoordinate)));
   }
 }

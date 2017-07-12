@@ -14,25 +14,27 @@ def _validate_coordinate(coordinate):
   parts = coordinate.split(":")
   return len(parts) >= 2 and len(parts) <= 5
 
-
-def _validate_coordinates(repository_ctx):
-  coordinates = repository_ctx.attr.artifacts
+def _validate_coordinates(repository_ctx, coordinates):
   for coordinate in coordinates:
     if _validate_coordinate(coordinate) == False:
       fail("Invalid coordinate %s. Should be formatted as \"group:artifact:version\"" % coordinate)
   return True
 
-def _create_arguments(repository_ctx):
-	arguments = ['-a ' + artifact for artifact in repository_ctx.attr.artifacts]
-	return ' '.join(arguments)
+def _create_coordinates(repository_ctx):
+	coordinates = []
+	for group in repository_ctx.attr.artifacts:
+		for artifact in repository_ctx.attr.artifacts[group]:
+			coordinates.append('%s:%s' % (group, artifact))
+	return coordinates
 
 def _execute(repository_ctx, command_string):
 	return repository_ctx.execute(["bash", "-c", command_string], timeout=repository_ctx.attr.timeout)
 
 def _transitive_maven_jar_impl(repository_ctx):
 	_check_dependencies(repository_ctx)
-	_validate_coordinates(repository_ctx)
-	arguments = _create_arguments(repository_ctx)
+	coordinates = _create_coordinates(repository_ctx)
+	_validate_coordinates(repository_ctx, coordinates)
+	arguments = ' '.join(['-a ' + coordinate for coordinate in coordinates])
 
 	# obtain the generate workspace binary
 	jar_path = repository_ctx.path('generate_workspace_deploy.jar')
@@ -42,15 +44,13 @@ def _transitive_maven_jar_impl(repository_ctx):
 	result = _execute(repository_ctx, "java -jar %s %s" % (jar_path, arguments))
 	print(result.stdout)
 
-	# TODO(petros): actually do something useful here. Only including this so bazel build doesn't error out.
-	repository_ctx.file('%s/BUILD' % repository_ctx.path("test"), '', False)
+	repository_ctx.file('BUILD', '', False)
 
 
 transitive_maven_jar = repository_rule(
 	implementation = _transitive_maven_jar_impl,
 	attrs = {
-    	"artifacts" : attr.string_list(default = [], mandatory = True),
-		
+		"artifacts" : attr.string_list_dict(default = {}, mandatory=True),
 		# TODO(petros): add support for private repositories in generate_workspace
 		"repository" : attr.string(default=MAVEN_CENTRAL),
 		"timeout" : attr.int(default=MAX_TIMEOUT)

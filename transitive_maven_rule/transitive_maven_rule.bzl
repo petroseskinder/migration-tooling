@@ -27,11 +27,19 @@ def _create_coordinates(repository_ctx):
 			coordinates.append('%s:%s' % (group, artifact))
 	return coordinates
 
+def _check_for_unsupported_args(repository_ctx):
+	if hasattr(repository_ctx.attr, "servers") and repository_ctx.attr.servers != MAVEN_CENTRAL:
+		fail("%s specifies a 'servers' attribute which is currently not supported" % repository_ctx.name)
+	if hasattr(repository_ctx.attr, "exclusions") and repository_ctx.attr.exclusions != []:
+		fail("%s specifies a 'exclusions' attribute which is currently not supported" % repository_ctx.name)
+
 def _execute(repository_ctx, command_string):
 	return repository_ctx.execute(["bash", "-c", command_string], timeout=repository_ctx.attr.timeout)
 
 def _transitive_maven_jar_impl(repository_ctx):
 	_check_dependencies(repository_ctx)
+	_check_for_unsupported_args(repository_ctx)
+
 	coordinates = _create_coordinates(repository_ctx)
 	_validate_coordinates(repository_ctx, coordinates)
 	arguments = ' '.join(['-a ' + coordinate for coordinate in coordinates])
@@ -52,8 +60,10 @@ transitive_maven_jar = repository_rule(
 	attrs = {
 		"artifacts" : attr.string_list_dict(default = {}, mandatory=True),
 		# TODO(petros): add support for private repositories in generate_workspace
-		"repository" : attr.string(default=MAVEN_CENTRAL),
-		"timeout" : attr.int(default=MAX_TIMEOUT)
+		"servers" : attr.string(default=MAVEN_CENTRAL),
+		"timeout" : attr.int(default=MAX_TIMEOUT),
+		#TODO(petros): add support for this in aether implementation of generate_workspace
+		"exclusions" : attr.string_list(default= []),
 	},
 	local = False,
 )

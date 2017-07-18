@@ -18,11 +18,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.CharStreams;
-
-import java.lang.invoke.MethodHandles;
-import java.util.List;
-import java.util.logging.Logger;
-import javax.annotation.Nullable;
+import com.google.devtools.build.workspace.maven.ArtifactBuilder.InvalidArtifactCoordinateException;
 import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
 import org.apache.maven.artifact.versioning.Restriction;
 import org.apache.maven.artifact.versioning.VersionRange;
@@ -38,18 +34,21 @@ import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.locator.DefaultModelLocator;
 import org.apache.maven.model.resolution.UnresolvableModelException;
 import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.DefaultArtifact;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.invoke.MethodHandles;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * Resolves Maven dependencies.
@@ -60,27 +59,10 @@ public class Resolver {
       MethodHandles.lookup().lookupClass().getName());
   private static final String TOP_LEVEL_ARTIFACT = "pom.xml";
 
-  /**
-   * Exception thrown if an artifact coordinate could not be parsed.
-   */
-  public static class InvalidArtifactCoordinateException extends Exception {
-    InvalidArtifactCoordinateException(String message) {
-      super(message);
-    }
-  }
-  
-  public static Artifact getArtifact(String atrifactCoords)
-      throws InvalidArtifactCoordinateException {
-    try {
-      return new DefaultArtifact(atrifactCoords);
-    } catch (IllegalArgumentException e) {
-      throw new InvalidArtifactCoordinateException(e.getMessage());
-    }
-  }
 
-  private static Artifact getArtifact(Dependency dependency)
+  private static Artifact getArtifactFromDeps(Dependency dependency)
       throws InvalidArtifactCoordinateException {
-    return getArtifact(dependency.getGroupId() + ":" + dependency.getArtifactId() + ":"
+    return ArtifactBuilder.fromCoords(dependency.getGroupId() + ":" + dependency.getArtifactId() + ":"
         + resolveVersion(
             dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion()));
   }
@@ -180,7 +162,7 @@ public class Resolver {
     Artifact artifact;
     ModelSource modelSource;
     try {
-      artifact = getArtifact(artifactCoord);
+      artifact = ArtifactBuilder.fromCoords(artifactCoord);
       modelSource = modelResolver.resolveModel(artifact);
     } catch (UnresolvableModelException | InvalidArtifactCoordinateException e) {
       logger.warning(e.getMessage());
@@ -235,7 +217,7 @@ public class Resolver {
       return;
     }
     try {
-      Rule artifactRule = new Rule(getArtifact(dependency));
+      Rule artifactRule = new Rule(getArtifactFromDeps(dependency));
       HashSet<String> localDepExclusions = Sets.newHashSet(exclusions);
       dependency.getExclusions().forEach(
           exclusion -> localDepExclusions.add(unversionedCoordinate(exclusion)));

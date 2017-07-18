@@ -37,15 +37,10 @@ public class ArtifactResolver {
       MethodHandles.lookup().lookupClass().getName());
 
   //TODO(petros): add support for managed dependencies, exclusions, and aliases.
-  public ArtifactResolver() {
-
-    this.system = newRepositorySystem();
-    this.systemSession = newRepositorySession(this.system);
-    this.remoteRepositories = ImmutableList.of(mavenCentralRepository());
-    this.managedDependencies = ImmutableList.of();
-  }
-
-  private ArtifactResolver(RepositorySystem system, RepositorySystemSession systemSession, List<RemoteRepository> remoteRepositories, List<Dependency> managedDependencies) {
+  private ArtifactResolver(RepositorySystem system,
+                           RepositorySystemSession systemSession,
+                           List<RemoteRepository> remoteRepositories,
+                           List<Dependency> managedDependencies) {
     this.system = system;
     this.systemSession = systemSession;
     this.remoteRepositories = remoteRepositories;

@@ -19,8 +19,8 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.converters.IParameterSplitter;
-import com.google.devtools.build.workspace.maven.Resolver;
-import com.google.devtools.build.workspace.maven.Resolver.InvalidArtifactCoordinateException;
+import com.google.devtools.build.workspace.maven.ArtifactBuilder;
+import com.google.devtools.build.workspace.maven.ArtifactBuilder.InvalidArtifactCoordinateException;
 import com.google.devtools.build.workspace.maven.Rule;
 import org.eclipse.aether.artifact.Artifact;
 
@@ -31,6 +31,7 @@ import java.util.List;
 /**
  * Command-line options for generate_workspace tool.
  */
+//TODO(petros): Add support for aliasing.
 @Parameters(separators = "=")
 public class GenerateWorkspaceOptions {
 
@@ -123,7 +124,7 @@ public class GenerateWorkspaceOptions {
       }
       Artifact artifact;
       try {
-        artifact = Resolver.getArtifact(coordinate);
+        artifact = ArtifactBuilder.fromCoords(coordinate);
       } catch (InvalidArtifactCoordinateException e) {
         throw new ParameterException(
             "Invalid format for alias: " + coordinate + ": " + e.getLocalizedMessage());

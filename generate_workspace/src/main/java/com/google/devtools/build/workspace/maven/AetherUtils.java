@@ -18,8 +18,6 @@ import org.eclipse.aether.util.graph.manager.ClassicDependencyManager;
 class AetherUtils {
 
   public static final String MAVEN_CENTRAL_URL = "https://repo1.maven.org/maven2/";
-  public static final String JBOSS_CENTRAL_URL =
-      "https://repository.jboss.org/nexus/content/groups/public/";
 
   /* Creates a new aether repository system. */
   static RepositorySystem newRepositorySystem() {

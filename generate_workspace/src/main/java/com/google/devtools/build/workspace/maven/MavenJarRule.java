@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.google.devtools.build.workspace.maven.AetherUtils.mavenCentralRepository;
+import static com.google.devtools.build.workspace.maven.AetherUtils.MAVEN_CENTRAL_URL;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -90,11 +90,12 @@ public class MavenJarRule implements Comparable<MavenJarRule> {
 
   /** Checks if the dependency node possesses a remote repository other than maven central */
   public boolean hasCustomRepository() {
+    //TODO(petros): add a test for this.
     List<RemoteRepository> repositories = node.getRepositories();
     if (repositories == null || repositories.isEmpty() || repositories.size() > 1) {
       return false;
     }
-    return repositories.get(0).equals(mavenCentralRepository());
+    return !repositories.get(0).getUrl().equals(MAVEN_CENTRAL_URL);
   }
 
   public String getRepository() {

@@ -15,13 +15,16 @@
 package com.google.devtools.build.workspace.output;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.devtools.build.workspace.output.AbstractWriter.MAJOR_INDENT;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.google.devtools.build.workspace.maven.MavenJarRule;
 import com.google.devtools.build.workspace.maven.Rule;
 
 import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.graph.DefaultDependencyNode;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -37,7 +40,7 @@ import java.util.Set;
 @RunWith(JUnit4.class)
 public class WorkspaceWriterTest {
 
-  public String getWorkspaceFileContent(Set<Rule> rules) throws Exception {
+  public String getWorkspaceFileContent(Set<MavenJarRule> rules) throws Exception {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     PrintStream ps = new PrintStream(baos);
     WorkspaceWriter writer = new WorkspaceWriter(new String[]{}, System.getenv("TEST_TMPDIR"));
@@ -45,7 +48,7 @@ public class WorkspaceWriterTest {
     return baos.toString(String.valueOf(Charset.defaultCharset()));
   }
 
-  public String getBuildFileContent(Set<Rule> rules) throws Exception {
+  public String getBuildFileContent(Set<MavenJarRule> rules) throws Exception {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     PrintStream ps = new PrintStream(baos);
     WorkspaceWriter writer = new WorkspaceWriter(new String[]{}, System.getenv("TEST_TMPDIR"));
@@ -67,48 +70,52 @@ public class WorkspaceWriterTest {
 
   @Test
   public void testArtifacts() throws Exception {
-    Set<Rule> rules = ImmutableSet.of(
-        new Rule(new DefaultArtifact("x:y:1.2.3")));
+    Set<MavenJarRule> rules = ImmutableSet.of(createRule("x:y:1.2.3"));
     String content = getWorkspaceFileContent(rules);
     assertThat(content).contains("maven_jar(\n"
-        + "    name = \"x_y\",\n"
-        + "    artifact = \"x:y:1.2.3\",\n"
+        + MAJOR_INDENT + "name = \"x_y\",\n"
+        + MAJOR_INDENT + "artifact = \"x:y:1.2.3\",\n"
         + ")"
     );
   }
 
   @Test
   public void testParents() throws Exception {
-    Rule rule = new Rule(new DefaultArtifact("x:y:1.2.3"));
+    MavenJarRule rule = createRule("x:y:1.2.3");
     rule.addParent("some parent");
-    Set<Rule> rules = ImmutableSet.of(rule);
+    Set<MavenJarRule> rules = ImmutableSet.of(rule);
     String content = getWorkspaceFileContent(rules);
     assertThat(content).contains("# some parent\n"
             + "maven_jar(\n"
-            + "    name = \"x_y\",\n"
-            + "    artifact = \"x:y:1.2.3\",\n"
+            + MAJOR_INDENT + "name = \"x_y\",\n"
+            + MAJOR_INDENT + "artifact = \"x:y:1.2.3\",\n"
             + ")"
     );
   }
 
   @Test
   public void testBuildFile() throws Exception {
-    Rule rule = new Rule(new DefaultArtifact("x:y:1.2.3"));
-    Rule dep1 = new Rule(new DefaultArtifact("dep:dep1:4.5.6"));
+    MavenJarRule rule = createRule("x:y:1.2.3");
+    MavenJarRule dep1 = createRule("dep:dep1:4.5.6");
     rule.addDependency(dep1);
-    Rule dep2 = new Rule(new DefaultArtifact("dep:dep2:7.8.9"));
+    MavenJarRule dep2 = createRule("dep:dep2:7.8.9");
     rule.addDependency(dep2);
-    Set<Rule> rules = ImmutableSet.of(rule, dep1, dep2);
+    Set<MavenJarRule> rules = ImmutableSet.of(rule, dep1, dep2);
     String content = getBuildFileContent(rules);
-    assertThat(content).contains("java_library(\n"
-            + "    name = \"x_y\",\n"
-            + "    visibility = [\"//visibility:public\"],\n"
-            + "    exports = [\"@x_y//jar\"],\n"
-            + "    runtime_deps = [\n"
-            + "        \":dep_dep1\",\n"
-            + "        \":dep_dep2\",\n"
-            + "    ],\n"
+    assertThat(content).contains("\njava_library(\n"
+            + MAJOR_INDENT + "name = \"x_y\",\n"
+            + MAJOR_INDENT + "visibility = [\"//visibility:public\"],\n"
+            + MAJOR_INDENT + "exports = [\"@x_y//jar\"],\n"
+            + MAJOR_INDENT + "runtime_deps = [\n"
+            + MAJOR_INDENT + MAJOR_INDENT + "\":dep_dep2\",\n"
+            + MAJOR_INDENT + MAJOR_INDENT + "\":dep_dep1\",\n"
+            + MAJOR_INDENT + "],\n"
             + ")"
     );
+  }
+
+  private MavenJarRule createRule(String mavenCoordinate) {
+    return new MavenJarRule(
+        new DefaultDependencyNode(new DefaultArtifact(mavenCoordinate)));
   }
 }

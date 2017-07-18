@@ -38,10 +38,18 @@ public class ArtifactResolver {
 
   //TODO(petros): add support for managed dependencies, exclusions, and aliases.
   public ArtifactResolver() {
+
     this.system = newRepositorySystem();
     this.systemSession = newRepositorySession(this.system);
     this.remoteRepositories = ImmutableList.of(mavenCentralRepository());
     this.managedDependencies = ImmutableList.of();
+  }
+
+  private ArtifactResolver(RepositorySystem system, RepositorySystemSession systemSession, List<RemoteRepository> remoteRepositories, List<Dependency> managedDependencies) {
+    this.system = system;
+    this.systemSession = systemSession;
+    this.remoteRepositories = remoteRepositories;
+    this.managedDependencies = managedDependencies;
   }
 
   /**
@@ -81,4 +89,39 @@ public class ArtifactResolver {
     DependencyFilter compileFilter = DependencyFilterUtils.classpathFilter(JavaScopes.COMPILE);
     return new DependencyRequest(collectRequest, compileFilter);
   }
+
+  public static class Builder {
+
+    private RemoteRepository remoteRepository = mavenCentralRepository();
+    private final RepositorySystem system = newRepositorySystem();
+    private RepositorySystemSession systemSession = newRepositorySession(system);
+    private List<Dependency> managedDependencies = ImmutableList.of();
+
+    public Builder() {}
+
+    public Builder remoteRepository(String url) {
+      //TODO(petros): look into why you cannot use other names for the first two parameters.
+      remoteRepository = new RemoteRepository.Builder( "central", "default", url).build();
+      return this;
+    }
+
+    public Builder managedDependencies(List<Dependency> managedDependencies) {
+      this.managedDependencies = managedDependencies;
+      return this;
+    }
+
+    public Builder systemSession(RepositorySystemSession systemSession) {
+      this.systemSession = systemSession;
+      return this;
+    }
+
+    //TODO(petros) add other configurations.
+    public ArtifactResolver build() {
+      return new ArtifactResolver(system, systemSession, ImmutableList.of(remoteRepository), managedDependencies);
+    }
+
+
+  }
+
 }
+

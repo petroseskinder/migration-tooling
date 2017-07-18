@@ -64,6 +64,12 @@ public class GenerateWorkspaceOptions {
   public String outputDir = "";
 
   @Parameter(
+      names = {"--server", "-s"},
+      description = "Remote repository to fetch maven jars from. Defaults to https://repo1.maven.org/maven2/"
+  )
+  public String repositoryURL = "https://repo1.maven.org/maven2/";
+
+  @Parameter(
       names = {"--direct-to-ws"},
       description = "Write generated rules to files named WORKSPACE and BUILD, respectively."
       + " If not specified, generate_workspace will write generated rules to a .bzl"

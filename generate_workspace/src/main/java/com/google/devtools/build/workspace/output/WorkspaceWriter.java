@@ -14,7 +14,7 @@
 
 package com.google.devtools.build.workspace.output;
 
-import com.google.devtools.build.workspace.maven.Rule;
+import com.google.devtools.build.workspace.maven.MavenJarRule;
 
 import java.io.File;
 import java.io.IOException;
@@ -65,7 +65,7 @@ public class WorkspaceWriter extends AbstractWriter {
   }
 
   @Override
-  public void write(Collection<Rule> rules) {
+  public void write(Collection<MavenJarRule> rules) {
     try (PrintStream workspaceStream = new PrintStream(workspaceFile);
         PrintStream buildStream = new PrintStream(buildFile)) {
       writeWorkspace(workspaceStream, rules);
@@ -82,16 +82,16 @@ public class WorkspaceWriter extends AbstractWriter {
   /**
    * Writes all resolved dependencies in WORKSPACE file format to the outputStream.
    */
-  public void writeWorkspace(PrintStream outputStream, Collection<Rule> rules) {
+  public void writeWorkspace(PrintStream outputStream, Collection<MavenJarRule> rules) {
     writeHeader(outputStream, args);
-    for (Rule rule : rules) {
+    for (MavenJarRule rule : rules) {
       outputStream.println(formatMavenJar(rule, "maven_jar", ""));
     }
   }
 
-  public void writeBuild(PrintStream outputStream, Collection<Rule> rules) {
+  public void writeBuild(PrintStream outputStream, Collection<MavenJarRule> rules) {
     writeHeader(outputStream, args);
-    for (Rule rule : rules) {
+    for (MavenJarRule rule : rules) {
       outputStream.println(formatJavaLibrary(rule, "java_library", ""));
     }
   }

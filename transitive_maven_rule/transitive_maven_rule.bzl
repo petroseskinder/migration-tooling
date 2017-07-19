@@ -36,7 +36,7 @@ def _check_for_unsupported_args(repository_ctx):
 def _execute(repository_ctx, command_string):
 	return repository_ctx.execute(["bash", "-c", command_string], timeout=repository_ctx.attr.timeout)
 
-def _transitive_maven_jar_impl(repository_ctx):
+def _impl(repository_ctx):
 	_check_dependencies(repository_ctx)
 	_check_for_unsupported_args(repository_ctx)
 
@@ -55,8 +55,8 @@ def _transitive_maven_jar_impl(repository_ctx):
 	repository_ctx.file('BUILD', '', False)
 
 
-transitive_maven_jar = repository_rule(
-	implementation = _transitive_maven_jar_impl,
+transitive_maven_jars = repository_rule(
+	implementation = _impl,
 	attrs = {
 		"artifacts" : attr.string_list_dict(default = {}, mandatory=True),
 		# TODO(petros): add support for private repositories in generate_workspace

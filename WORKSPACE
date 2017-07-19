@@ -1,14 +1,13 @@
 load('//:generate_workspace.bzl', 'generated_maven_jars')
 generated_maven_jars()
 
-load('//transitive_maven_rule:transitive_maven_rule.bzl', 'transitive_maven_jar')
+load('//transitive_maven_rule:transitive_maven_rule.bzl', 'transitive_maven_jars')
 
-# The following repository_rule specifies our the maven coordinates we depend on.
-# Transitive maven jar will fetch these artifacts as well as their transitive dependencies
-# TODO(petros): Figure out alternative means to group and specify targets.
+# The following repository_rule specifies the maven coordinates we depend on.
+# transitive_maven_jars will fetch these artifacts as well as their transitive dependencies
 # Note: The dependency resolution mechanism is very sensitive to the order artifacts are specified,
-# so even if lexographic ordering may be more aesthetically pleasing, it may negatively influence our results.
-transitive_maven_jar(
+# TODO(petros): Figure out alternative means to group and specify targets.
+transitive_maven_jars(
 	name = "dependencies",
 	artifacts = {
 		"org.apache.maven" : [

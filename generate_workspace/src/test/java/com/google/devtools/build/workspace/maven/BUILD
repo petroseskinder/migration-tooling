@@ -3,8 +3,8 @@ java_test(
     srcs = ["RuleTest.java"],
     deps = [
         "//generate_workspace/src/main/java/com/google/devtools/build/workspace/maven",
-        "//third_party:com_google_truth_truth",
-        "//third_party:junit_junit",
+        "@com_google_truth_truth//jar",
+        "@junit_junit//jar",
     ],
 )
 
@@ -14,11 +14,11 @@ java_test(
     deps = [
         "//generate_workspace/src/main/java/com/google/devtools/build/workspace/maven",
         "//third_party:aether",
-        "//third_party:com_google_guava_guava",
-        "//third_party:com_google_truth_truth",
-        "//third_party:junit_junit",
         "//third_party:maven_model",
-        "//third_party:org_mockito_mockito_all",
+        "@com_google_guava_guava//jar",
+        "@com_google_truth_truth//jar",
+        "@junit_junit//jar",
+        "@org_mockito_mockito_all//jar",
     ],
 )
 
@@ -28,10 +28,11 @@ java_test(
     deps = [
         "//generate_workspace/src/main/java/com/google/devtools/build/workspace/maven",
         "//third_party:aether",
-        "//third_party:com_google_guava_guava",
-        "//third_party:com_google_truth_truth",
-        "//third_party:junit_junit",
-        "//third_party:org_mockito_mockito_all",
+        "//third_party:maven_model",
+        "@com_google_guava_guava//jar",
+        "@com_google_truth_truth//jar",
+        "@junit_junit//jar",
+        "@org_mockito_mockito_all//jar",
     ],
 )
 
@@ -41,9 +42,10 @@ java_test(
     deps = [
         "//generate_workspace/src/main/java/com/google/devtools/build/workspace/maven",
         "//third_party:aether",
-        "//third_party:com_google_guava_guava",
-        "//third_party:com_google_truth_truth",
-        "//third_party:junit_junit",
-        "//third_party:org_mockito_mockito_all",
+        "//third_party:maven_model",
+        "@com_google_guava_guava//jar",
+        "@com_google_truth_truth//jar",
+        "@junit_junit//jar",
+        "@org_mockito_mockito_all//jar",
     ],
 )

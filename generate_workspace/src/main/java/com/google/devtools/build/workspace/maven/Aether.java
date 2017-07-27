@@ -18,6 +18,7 @@ package com.google.devtools.build.workspace.maven;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.collect.Lists;
+import com.google.devtools.build.workspace.maven.ArtifactBuilder.InvalidArtifactCoordinateException;
 import java.util.List;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
@@ -52,6 +53,7 @@ import org.eclipse.aether.version.Version;
 public class Aether {
 
   static final String MAVEN_CENTRAL_URL = "https://repo1.maven.org/maven2/";
+  static final String UNBOUNDED_VERSION_SPEC = "[,)";
 
   RepositorySystem repositorySystem;
 
@@ -71,6 +73,12 @@ public class Aether {
     VersionRangeRequest rangeRequest = new VersionRangeRequest(artifact, remoteRepositories, null);
     VersionRangeResult result = repositorySystem.resolveVersionRange(repositorySystemSession, rangeRequest);
     return result.getVersions().stream().map(Version::toString).collect(toList());
+  }
+
+  List<String> requestAllVersions(String groupId, String artifactId)
+      throws VersionRangeResolutionException, InvalidArtifactCoordinateException {
+    Artifact requestArtifact = ArtifactBuilder.fromCoords(groupId, artifactId, UNBOUNDED_VERSION_SPEC);
+    return requestVersionRange(requestArtifact);
   }
 
   /**

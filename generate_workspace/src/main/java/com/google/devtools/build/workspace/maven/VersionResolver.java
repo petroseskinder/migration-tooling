@@ -40,24 +40,54 @@ class VersionResolver {
    */
   String resolveVersion(String groupId, String artifactId, String versionSpec)
       throws InvalidArtifactCoordinateException {
-
-    Artifact artifact = ArtifactBuilder.fromCoords(groupId, artifactId, versionSpec);
     List<String> versions;
-
     try {
-      versions = aether.requestVersionRange(artifact);
+      versions = requestVersionList(groupId, artifactId, versionSpec);
     } catch (VersionRangeResolutionException e) {
       String errorMessage =
           messageForInvalidArtifact(groupId, artifactId, versionSpec, e.getMessage());
       throw new InvalidArtifactCoordinateException(errorMessage);
     }
-
     if (isInvalidRangeResult(versions)) {
       String errorMessage =
           messageForInvalidArtifact(groupId, artifactId, versionSpec, "Invalid Range Result");
       throw new InvalidArtifactCoordinateException(errorMessage);
     }
-    return getHighestVersion(versions);
+    return selectVersion(groupId, artifactId, versionSpec, versions);
+  }
+
+  private String selectVersion(
+      String groupId, String artifactId, String versionSpec, List<String> versions)
+      throws InvalidArtifactCoordinateException {
+    if (isVersionRange(versionSpec)) {
+      return getHighestVersion(versions);
+    }
+    return selectSoftPinVersion(groupId, artifactId, versionSpec, versions);
+  }
+
+  private String selectSoftPinVersion(
+      String groupId, String artifactId, String versionSpec, List<String> versions)
+      throws InvalidArtifactCoordinateException {
+    if (versions.contains(versionSpec)) {
+      return versionSpec;
+    }
+    String errorMessage =
+        messageForInvalidArtifact(groupId, artifactId, versionSpec, "Invalid Range Result");
+    throw new InvalidArtifactCoordinateException(errorMessage);
+  }
+
+  private List<String> requestVersionList(String groupId, String artifactId, String versionSpec)
+      throws InvalidArtifactCoordinateException, VersionRangeResolutionException {
+    if (isVersionRange(versionSpec)) {
+      Artifact artifact = ArtifactBuilder.fromCoords(groupId, artifactId, versionSpec);
+      return aether.requestVersionRange(artifact);
+    }
+    return aether.requestAllVersions(groupId, artifactId);
+  }
+
+  /** Cannot be a version range otherwise. */
+  private boolean isVersionRange(String versionSpec) {
+    return versionSpec.charAt(0) == '(' || versionSpec.charAt(0) == '[';
   }
 
   private boolean isInvalidRangeResult(List<String> result) {

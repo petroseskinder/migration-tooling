@@ -24,7 +24,6 @@ import java.util.Set;
  */
 public abstract class AbstractWriter {
   public abstract void write(Collection<Rule> rules);
-
   /**
    * Writes the list of sources as a comment to outputStream.
    */

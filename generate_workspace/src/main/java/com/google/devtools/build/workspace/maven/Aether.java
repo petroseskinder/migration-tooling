@@ -106,11 +106,11 @@ public class Aether {
   }
 
   /** TODO(petros): this is a hack until I replace the existing Resolver. */
-  static Aether defaultOption() {
+  public static Aether defaultOption() {
     return new Aether.Builder().build();
   }
 
-  static Aether.Builder builder() {
+  public static Aether.Builder builder() {
     return new Aether.Builder();
   }
 

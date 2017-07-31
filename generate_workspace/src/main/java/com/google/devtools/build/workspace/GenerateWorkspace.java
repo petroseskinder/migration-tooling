@@ -15,40 +15,47 @@
 package com.google.devtools.build.workspace;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.google.devtools.build.workspace.maven.Aether;
+import com.google.devtools.build.workspace.maven.ArtifactResolver;
 import com.google.devtools.build.workspace.maven.DefaultModelResolver;
+import com.google.devtools.build.workspace.maven.GraphSerializer;
+import com.google.devtools.build.workspace.maven.MavenJarRule;
 import com.google.devtools.build.workspace.maven.Resolver;
 import com.google.devtools.build.workspace.maven.Rule;
 import com.google.devtools.build.workspace.output.AbstractWriter;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyNode;
 
 /**
  * Generates a WORKSPACE file for Bazel from other types of dependency trackers.
  */
 class GenerateWorkspace {
 
+  private final ArtifactResolver artifactResolver;
   private final Resolver resolver;
-  private final List<String> inputs;
+  private final Set<MavenJarRule> rulesFromArtifacts = Sets.newHashSet();
+  private final Set<Rule> rulesFromPomFiles = Sets.newHashSet();
+  private final List<Dependency> managedDependencies = Lists.newArrayList();
 
   GenerateWorkspace(List<Rule> aliases) {
+    this.artifactResolver = new ArtifactResolver(Aether.defaultOption(), managedDependencies);
     this.resolver = new Resolver(new DefaultModelResolver(), aliases);
-    this.inputs = Lists.newArrayList();
   }
 
   void generateFromPom(List<String> projects) {
     for (String project : projects) {
-      String pomFile = resolver.resolvePomDependencies(getAbsolute(project));
-      if (pomFile != null) {
-        inputs.add(pomFile);
-      }
+      resolver.resolvePomDependencies(getAbsolute(project));
     }
+    rulesFromPomFiles.addAll(resolver.getRules());
   }
 
   void generateFromArtifacts(List<String> artifacts) {
-    for (String artifactCoord : artifacts) {
-      inputs.add(artifactCoord);
-      resolver.resolveArtifact(artifactCoord);
-    }
+    DependencyNode root = artifactResolver.resolveArtifacts(artifacts);
+    rulesFromArtifacts.addAll(GraphSerializer.generateBuildRules(root));
   }
 
   private String getAbsolute(String path) {

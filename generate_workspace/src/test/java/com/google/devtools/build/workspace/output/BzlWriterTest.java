@@ -15,6 +15,8 @@
 package com.google.devtools.build.workspace.output;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.devtools.build.workspace.output.AbstractWriter.MAJOR_INDENT;
+import static com.google.devtools.build.workspace.output.AbstractWriter.MINOR_INDENT;
 import static java.util.stream.Collectors.toList;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -87,15 +89,17 @@ public class BzlWriterTest {
     String fileContents = Files.toString(
         new File(System.getenv("TEST_TMPDIR") + "/generate_workspace.bzl"),
         Charset.defaultCharset());
-    assertThat(fileContents).contains("def generated_maven_jars():\n  native.maven_jar(\n"
-        + "      name = \"x_y\",\n"
-        + "      artifact = \"x:y:1.2.3\",\n"
-        + "  )\n");
-    assertThat(fileContents).contains("def generated_java_libraries():\n  native.java_library(\n"
-        + "      name = \"x_y\",\n"
-        + "      visibility = [\"//visibility:public\"],\n"
-        + "      exports = [\"@x_y//jar\"],\n"
-        + "  )\n");
+    assertThat(fileContents).contains("def generated_maven_jars():\n"
+        + MINOR_INDENT + "native.maven_jar(\n"
+        + MINOR_INDENT + MAJOR_INDENT +  "name = \"x_y\",\n"
+        + MINOR_INDENT + MAJOR_INDENT + "artifact = \"x:y:1.2.3\",\n"
+        + MINOR_INDENT + ")\n");
+    assertThat(fileContents).contains("def generated_java_libraries():\n"
+        + MINOR_INDENT + "native.java_library(\n"
+        + MINOR_INDENT + MAJOR_INDENT + "name = \"x_y\",\n"
+        + MINOR_INDENT + MAJOR_INDENT + "visibility = [\"//visibility:public\"],\n"
+        + MINOR_INDENT + MAJOR_INDENT + "exports = [\"@x_y//jar\"],\n"
+        + MINOR_INDENT + ")\n");
   }
 
   @Test

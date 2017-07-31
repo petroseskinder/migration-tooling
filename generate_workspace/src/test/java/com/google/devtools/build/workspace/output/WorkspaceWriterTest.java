@@ -15,6 +15,7 @@
 package com.google.devtools.build.workspace.output;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.devtools.build.workspace.output.AbstractWriter.MAJOR_INDENT;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -70,8 +71,8 @@ public class WorkspaceWriterTest {
         new Rule(new DefaultArtifact("x:y:1.2.3")));
     String content = getWorkspaceFileContent(rules);
     assertThat(content).contains("maven_jar(\n"
-        + "    name = \"x_y\",\n"
-        + "    artifact = \"x:y:1.2.3\",\n"
+        + MAJOR_INDENT + "name = \"x_y\",\n"
+        + MAJOR_INDENT + "artifact = \"x:y:1.2.3\",\n"
         + ")"
     );
   }
@@ -84,8 +85,8 @@ public class WorkspaceWriterTest {
     String content = getWorkspaceFileContent(rules);
     assertThat(content).contains("# some parent\n"
             + "maven_jar(\n"
-            + "    name = \"x_y\",\n"
-            + "    artifact = \"x:y:1.2.3\",\n"
+            + MAJOR_INDENT + "name = \"x_y\",\n"
+            + MAJOR_INDENT + "artifact = \"x:y:1.2.3\",\n"
             + ")"
     );
   }
@@ -100,13 +101,13 @@ public class WorkspaceWriterTest {
     Set<Rule> rules = ImmutableSet.of(rule, dep1, dep2);
     String content = getBuildFileContent(rules);
     assertThat(content).contains("java_library(\n"
-            + "    name = \"x_y\",\n"
-            + "    visibility = [\"//visibility:public\"],\n"
-            + "    exports = [\"@x_y//jar\"],\n"
-            + "    runtime_deps = [\n"
-            + "        \":dep_dep1\",\n"
-            + "        \":dep_dep2\",\n"
-            + "    ],\n"
+            + MAJOR_INDENT + "name = \"x_y\",\n"
+            + MAJOR_INDENT + "visibility = [\"//visibility:public\"],\n"
+            + MAJOR_INDENT + "exports = [\"@x_y//jar\"],\n"
+            + MAJOR_INDENT + "runtime_deps = [\n"
+            + MAJOR_INDENT + MAJOR_INDENT + "\":dep_dep1\",\n"
+            + MAJOR_INDENT + MAJOR_INDENT + "\":dep_dep2\",\n"
+            + MAJOR_INDENT + "],\n"
             + ")"
     );
   }

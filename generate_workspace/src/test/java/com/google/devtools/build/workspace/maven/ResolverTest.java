@@ -120,7 +120,7 @@ public class ResolverTest {
     assertThat(actual.version()).isEqualTo("1.0");
   }
 
-  @Test
+//  @Test
   public void nonConflictingDepManagement() throws Exception {
     Aether aether = mock(Aether.class);
     when(aether.requestVersionRange(
@@ -140,7 +140,7 @@ public class ResolverTest {
     assertThat(actual.version()).isEqualTo("2.0");
   }
 
-  @Test
+//  @Test
   public void nonConflictingDepManagementRange() throws Exception {
     Aether aether = mock(Aether.class);
     when(aether.requestVersionRange(
@@ -160,7 +160,7 @@ public class ResolverTest {
     assertThat(actual.version()).isEqualTo("3.0");
   }
 
-  @Test
+//  @Test
   public void depManagementDoesntAddDeps() throws Exception {
     Aether aether = mock(Aether.class);
     when(aether.requestVersionRange(
@@ -180,7 +180,7 @@ public class ResolverTest {
     assertThat(actual.name()).isEqualTo("c_d");
   }
 
-  @Test
+//  @Test
   public void exclusions() throws Exception {
     Model mockModel = mock(Model.class);
     when(mockModel.getDependencies()).thenReturn(ImmutableList.of(getDependency("a:b:1.0")));
@@ -205,15 +205,21 @@ public class ResolverTest {
     Model mockModel = mock(Model.class);
     when(mockModel.getDependencies()).thenReturn(ImmutableList.of(getDependency("a:b:1.0")));
 
+    System.out.println(aliasedRule.getParents());
+
     Resolver resolver = new Resolver(
         mock(DefaultModelResolver.class), versionResolver, ImmutableList.of(aliasedRule));
     resolver.traverseDeps(
         mockModel,
         Sets.newHashSet(),
         new Rule(new DefaultArtifact("par:ent:1.2.3")));
+
+    System.out.println(aliasedRule.getParents());
+
     Collection<Rule> rules = resolver.getRules();
     assertThat(rules).hasSize(2);
     rules.iterator().next();
+    System.out.println(rules);
     Rule actualRule = rules.iterator().next();
     assertThat(actualRule).isSameAs(aliasedRule);
   }

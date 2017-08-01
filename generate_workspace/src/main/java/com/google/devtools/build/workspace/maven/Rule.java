@@ -16,98 +16,52 @@ package com.google.devtools.build.workspace.maven;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
-import org.eclipse.aether.artifact.Artifact;
-
-import javax.annotation.Nullable;
 import java.lang.invoke.MethodHandles;
-import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
+import org.eclipse.aether.artifact.Artifact;
 
 /**
  * A struct representing the fields of maven_jar to be written to the WORKSPACE file.
  */
-//TODO(petros): Kill this after refactoring resolvers.
-public final class Rule implements Comparable<Rule> {
+public final class Rule extends AbstractRule {
   private final static Logger logger = Logger.getLogger(
       MethodHandles.lookup().lookupClass().getName());
+
+  private final Set<Rule> dependentRules;
+
   static final String MAVEN_CENTRAL_URL = "https://repo1.maven.org/maven2/";
 
-  private final Artifact artifact;
-  @Nullable
-  private final String alias;
-  private final Set<String> parents;
-  private final Set<String> exclusions;
-  private final Set<Rule> dependencies;
-  private String version;
   private String repository;
-  private String sha1;
 
   public Rule(Artifact artifact) {
     this(artifact, null);
   }
 
   public Rule(Artifact artifact, String alias) {
-    this.artifact = artifact;
-    this.version = artifact.getVersion();
-    this.parents = Sets.newHashSet();
-    this.dependencies = Sets.newTreeSet();
-    this.exclusions = Sets.newHashSet();
+    super(artifact, alias);
     this.repository = MAVEN_CENTRAL_URL;
-    this.alias = alias;
+    this.dependentRules = Sets.newTreeSet();
   }
 
-  public void addParent(String parent) {
-    parents.add(parent);
-  }
-
+  /** Convenience method to add a dependency from a rule class. */
   public void addDependency(Rule dependency) {
-    dependencies.add(dependency);
+    addDependency(dependency.name());
+    dependentRules.add(dependency);
   }
 
-  public Set<Rule> getDependencies() {
-    return dependencies;
+  public Set<Rule> getDependentRules() {
+    return dependentRules;
   }
 
-  public String artifactId() {
-    return artifact.getArtifactId();
+  @Override
+  public boolean hasCustomRepository() {
+    return !MAVEN_CENTRAL_URL.equals(repository);
   }
 
-  public String groupId() {
-    return artifact.getGroupId();
-  }
-
-  public String version() {
-    return version;
-  }
-
-  public void setVersion(String version) {
-    this.version = version;
-  }
-
-  /**
-   * A unique name for this artifact to use in maven_jar's name attribute.
-   */
-  public String name() {
-    if (alias != null) {
-      return alias;
-    }
-    return Rule.name(groupId(), artifactId());
-  }
-
-  /**
-   * A unique name for this artifact to use in maven_jar's name attribute.
-   */
-  public static String name(String groupId, String artifactId) {
-    return groupId.replaceAll("[.-]", "_") + "_" + artifactId.replaceAll("[.-]", "_");
-  }
-
-  public Artifact getArtifact() {
-    return artifact;
-  }
-
-  public String toMavenArtifactString() {
-    return groupId() + ":" + artifactId() + ":" + version();
+  @Override
+  public String getRepository() {
+    return repository;
   }
 
   public void setRepository(String url) {
@@ -127,15 +81,6 @@ public final class Rule implements Comparable<Rule> {
     }
   }
 
-  public void setSha1(String sha1) {
-    this.sha1 = sha1;
-  }
-
-  private String getUri() {
-    return groupId().replaceAll("\\.", "/") + "/" + artifactId() + "/" + version() + "/"
-        + artifactId() + "-" + version() + ".pom";
-  }
-
   /**
    * @return The artifact's URL.
    */
@@ -144,48 +89,9 @@ public final class Rule implements Comparable<Rule> {
     return repository + getUri();
   }
 
-  public boolean hasCustomRepository() {
-    return !MAVEN_CENTRAL_URL.equals(repository);
+  private String getUri() {
+    return groupId().replaceAll("\\.", "/") + "/" + artifactId() + "/" + version() + "/"
+        + artifactId() + "-" + version() + ".pom";
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-
-    Rule rule = (Rule) o;
-
-    return Objects.equals(groupId(), rule.groupId())
-        && Objects.equals(artifactId(), rule.artifactId());
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(groupId(), artifactId());
-  }
-
-  @Override
-  public int compareTo(Rule o) {
-    return name().compareTo(o.name());
-  }
-
-  public Set<String> getParents() {
-    return parents;
-  }
-
-  public String getRepository() {
-    return repository;
-  }
-
-  public String getSha1() {
-    return sha1;
-  }
-
-  public boolean aliased() {
-    return alias != null;
-  }
 }

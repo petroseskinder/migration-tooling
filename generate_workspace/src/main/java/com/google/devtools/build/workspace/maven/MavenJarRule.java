@@ -16,6 +16,7 @@ package com.google.devtools.build.workspace.maven;
 
 import static java.util.stream.Collectors.toList;
 
+import com.beust.jcommander.internal.Nullable;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import java.util.List;
@@ -25,25 +26,65 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.graph.DependencyNode;
 import org.eclipse.aether.repository.RemoteRepository;
 
-/**
- * A struct representing the fields of maven_jar to be written to the WORKSPACE file.
- */
-//TODO(petros): refactor existing resolvers to use this class rather than Rule.
-//TODO(petros): Implement the SHA1 and aliasing.
-public class MavenJarRule implements Comparable<MavenJarRule> {
+abstract class AbstractRule implements Comparable<AbstractRule> {
 
-  private final DependencyNode node;
-  private final Set<String> parents;
-  private final Set<String> dependencies;
+  protected final Artifact artifact;
 
-  public MavenJarRule(DependencyNode node) {
-    this.node = node;
+  @Nullable
+  protected final String alias;
+
+  protected final Set<String> parents;
+
+  protected final Set<String> dependencies;
+
+  protected final Set<String> exclusions;
+
+  protected String version;
+
+  protected String sha1;
+
+  public AbstractRule(Artifact artifact, String alias) {
+    this.artifact = artifact;
+    this.version = artifact.getVersion();
     this.parents = Sets.newHashSet();
-    this.dependencies = Sets.newHashSet();
+    this.dependencies = Sets.newTreeSet();
+    this.exclusions = Sets.newHashSet();
+    this.alias = alias;
   }
 
-  public void addParent(MavenJarRule parent) {
-    addParent(parent.toMavenArtifactString());
+  /**
+   * A unique name for this artifact to use in maven_jar's name attribute.
+   */
+  public String name() {
+    return AbstractRule.name(groupId(), artifactId());
+  }
+
+  /**
+   * A unique name for this artifact to use in maven_jar's name attribute.
+   */
+  public static String name(String groupId, String artifactId) {
+    return groupId.replaceAll("[.-]", "_") + "_" + artifactId.replaceAll("[.-]", "_");
+  }
+
+  /** Artifact specific things */
+  public Artifact getArtifact() {
+    return artifact;
+  }
+
+  public String groupId() {
+    return artifact.getGroupId();
+  }
+
+  public String artifactId() {
+    return artifact.getArtifactId();
+  }
+
+  public String version() {
+    return version;
+  }
+
+  public void setVersion(String version) {
+    this.version = version;
   }
 
   public void addParent(String parent) {
@@ -54,69 +95,42 @@ public class MavenJarRule implements Comparable<MavenJarRule> {
     return parents;
   }
 
-  public void addDependency(MavenJarRule dependency) {
-    addDependency(dependency.name());
-  }
-
-  public void addDependency(String dependency) {
-    dependencies.add(dependency);
+  public void addDependency(String dep) {
+    dependencies.add(dep);
   }
 
   public Set<String> getDependencies() {
     return dependencies;
   }
 
-  private String artifactId() {
-    return node.getArtifact().getArtifactId();
-  }
-
-  private String groupId() {
-    return node.getArtifact().getGroupId();
-  }
-
-  public String version() {
-    return node.getArtifact().getVersion();
-  }
-
-  /**
-   * A unique name for this artifact to use in maven_jar's name attribute.
-   */
-  public String name() {
-    return name(groupId(), artifactId());
-  }
-
-  /**
-   * A unique name for this artifact to use in maven_jar's name attribute.
-   */
-  public static String name(String groupId, String artifactId) {
-    return groupId.replaceAll("[.-]", "_") + "_" + artifactId.replaceAll("[.-]", "_");
-  }
-
-  public Artifact getArtifact() {
-    return node.getArtifact();
-  }
-
   public String toMavenArtifactString() {
     return groupId() + ":" + artifactId() + ":" + version();
   }
 
-  /** Checks if the dependency node possesses a remote repository other than maven central */
-  public boolean hasCustomRepository() {
-    List<RemoteRepository> repositories = node.getRepositories();
-    if (repositories == null || repositories.isEmpty() || repositories.size() > 1) {
-      return false;
-    }
-    return repositories.get(0).equals(Aether.Utilities.mavenCentralRepository());
+  public boolean aliased() {
+    return alias != null;
   }
 
-  public String getRepository() {
-    return Joiner.on(',').join(
-        node.getRepositories().stream().map(RemoteRepository::getUrl).collect(toList()));
+  public abstract String getRepository();
+
+  public abstract boolean hasCustomRepository();
+
+  public void setSha1(String sha1) {
+    this.sha1 = sha1;
+  }
+
+  public String getSha1() {
+    return sha1;
   }
 
   @Override
-  public String toString() {
-    return node.getArtifact().toString();
+  public int compareTo(AbstractRule o) {
+    return 0;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(groupId(), artifactId());
   }
 
   @Override
@@ -128,29 +142,59 @@ public class MavenJarRule implements Comparable<MavenJarRule> {
       return false;
     }
 
-    MavenJarRule rule = (MavenJarRule) o;
+    AbstractRule rule = (AbstractRule) o;
 
     return Objects.equals(groupId(), rule.groupId())
         && Objects.equals(artifactId(), rule.artifactId());
   }
 
   @Override
-  public int hashCode() {
-    return Objects.hash(groupId(), artifactId());
+  public String toString() {
+    return artifact.toString();
+  }
+}
+
+
+/**
+ * A struct representing the fields of maven_jar to be written to the WORKSPACE file.
+ */
+//TODO(petros): Implement the SHA1 and aliasing.
+public class MavenJarRule extends AbstractRule {
+
+  private final DependencyNode node;
+
+  public MavenJarRule(DependencyNode node) {
+    super(node.getArtifact(), null);
+    this.node = node;
+  }
+
+  public void addParent(MavenJarRule parent) {
+    addParent(parent.toMavenArtifactString());
+  }
+
+
+  public void addDependency(MavenJarRule dependency) {
+    addDependency(dependency.name());
+  }
+
+  /** Checks if the dependency node possesses a remote repository other than maven central */
+  @Override
+  public boolean hasCustomRepository() {
+    List<RemoteRepository> repositories = node.getRepositories();
+    if (repositories == null || repositories.isEmpty() || repositories.size() > 1) {
+      return false;
+    }
+    return repositories.get(0).equals(Aether.Utilities.mavenCentralRepository());
   }
 
   @Override
-  public int compareTo(MavenJarRule o) {
-    return name().compareTo(o.name());
-  }
-
-  public boolean aliased() {
-    //TODO(petros) implement this
-    return false;
+  public String getRepository() {
+    return Joiner.on(',').join(
+        node.getRepositories().stream().map(RemoteRepository::getUrl).collect(toList()));
   }
 
   public String getSha1() {
     //TODO(petros) implement this
-    return null;
+    return "";
   }
 }

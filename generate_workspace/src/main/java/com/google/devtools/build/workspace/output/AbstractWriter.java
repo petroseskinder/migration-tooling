@@ -73,11 +73,11 @@ public abstract class AbstractWriter {
     builder.append(indent).append(MAJOR_INDENT).append("name = \"").append(rule.name()).append("\",\n");
     builder.append(indent).append(MAJOR_INDENT).append("visibility = [\"//visibility:public\"],\n");
     builder.append(indent).append(MAJOR_INDENT).append("exports = [\"@").append(rule.name()).append("//jar\"],\n");
-    Set<Rule> dependencies = rule.getDependencies();
+    Set<String> dependencies = rule.getDependencies();
     if (!dependencies.isEmpty()) {
       builder.append(indent).append(MAJOR_INDENT).append("runtime_deps = [\n");
-      for (Rule r : rule.getDependencies()) {
-        builder.append(indent).append(MAJOR_INDENT).append(MAJOR_INDENT).append("\":").append(r.name()).append("\",\n");
+      for (String dep : rule.getDependencies()) {
+        builder.append(indent).append(MAJOR_INDENT).append(MAJOR_INDENT).append("\":").append(dep).append("\",\n");
       }
       builder.append(indent).append(MAJOR_INDENT).append("],\n");
     }

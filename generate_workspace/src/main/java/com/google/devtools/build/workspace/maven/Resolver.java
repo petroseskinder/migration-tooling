@@ -276,9 +276,11 @@ public class Resolver {
       return false;
     }
 
+    logger.severe("adding " + dependency + " and parent " + parent);
     updateVersion(artifactName, dependency);
     deps.put(artifactName, dependency);
     dependency.addParent(parent);
+    logger.severe("has " + dependency + " and its parent is " + dependency.getParents() + " " + getRules());
     return true;
   }
 

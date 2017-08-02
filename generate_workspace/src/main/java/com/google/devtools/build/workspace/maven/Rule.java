@@ -14,6 +14,8 @@
 
 package com.google.devtools.build.workspace.maven;
 
+import static com.google.devtools.build.workspace.maven.Aether.MAVEN_CENTRAL_URL;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import org.eclipse.aether.artifact.Artifact;
@@ -29,9 +31,9 @@ import java.util.logging.Logger;
  */
 //TODO(petros): Kill this after refactoring resolvers.
 public final class Rule implements Comparable<Rule> {
+
   private final static Logger logger = Logger.getLogger(
       MethodHandles.lookup().lookupClass().getName());
-  static final String MAVEN_CENTRAL_URL = "https://repo1.maven.org/maven2/";
 
   private final Artifact artifact;
   @Nullable
@@ -57,34 +59,6 @@ public final class Rule implements Comparable<Rule> {
     this.alias = alias;
   }
 
-  public void addParent(String parent) {
-    parents.add(parent);
-  }
-
-  public void addDependency(Rule dependency) {
-    dependencies.add(dependency);
-  }
-
-  public Set<Rule> getDependencies() {
-    return dependencies;
-  }
-
-  public String artifactId() {
-    return artifact.getArtifactId();
-  }
-
-  public String groupId() {
-    return artifact.getGroupId();
-  }
-
-  public String version() {
-    return version;
-  }
-
-  public void setVersion(String version) {
-    this.version = version;
-  }
-
   /**
    * A unique name for this artifact to use in maven_jar's name attribute.
    */
@@ -106,6 +80,42 @@ public final class Rule implements Comparable<Rule> {
     return artifact;
   }
 
+  public String artifactId() {
+    return artifact.getArtifactId();
+  }
+
+  public String groupId() {
+    return artifact.getGroupId();
+  }
+
+  public String version() {
+    return version;
+  }
+
+  public void setVersion(String version) {
+    this.version = version;
+  }
+
+  public boolean isAliased() {
+    return alias != null;
+  }
+
+  public void addParent(String parent) {
+    parents.add(parent);
+  }
+
+  public Set<String> getParents() {
+    return parents;
+  }
+
+  public void addDependency(Rule dependency) {
+    dependencies.add(dependency);
+  }
+
+  public Set<Rule> getDependencies() {
+    return dependencies;
+  }
+
   public String toMavenArtifactString() {
     return groupId() + ":" + artifactId() + ":" + version();
   }
@@ -113,7 +123,7 @@ public final class Rule implements Comparable<Rule> {
   public void setRepository(String url) {
     // url is of the form repository/group/artifact/version/artifact-version.pom. Strip off
     // everything after repository/.
-    int uriStart = url.indexOf(getUri());
+    int uriStart = url.indexOf(artifactUri());
     if (uriStart == -1) {
       // If url is actually a path to a file, it won't match the URL pattern described above.
       // However, in that case we also have no way of fetching the artifact, so we'll print a
@@ -127,13 +137,20 @@ public final class Rule implements Comparable<Rule> {
     }
   }
 
+  public String getRepository() {
+    return repository;
+  }
+
+  public boolean hasCustomRepository() {
+    return !MAVEN_CENTRAL_URL.equals(repository);
+  }
+
   public void setSha1(String sha1) {
     this.sha1 = sha1;
   }
 
-  private String getUri() {
-    return groupId().replaceAll("\\.", "/") + "/" + artifactId() + "/" + version() + "/"
-        + artifactId() + "-" + version() + ".pom";
+  public String getSha1() {
+    return sha1;
   }
 
   /**
@@ -141,11 +158,13 @@ public final class Rule implements Comparable<Rule> {
    */
   public String getUrl() {
     Preconditions.checkState(repository.endsWith("/"));
-    return repository + getUri();
+    return repository + artifactUri();
   }
 
-  public boolean hasCustomRepository() {
-    return !MAVEN_CENTRAL_URL.equals(repository);
+  /** constructs uri for artifact. */
+  private String artifactUri() {
+    return groupId().replaceAll("\\.", "/") + "/" + artifactId() + "/" + version() + "/"
+        + artifactId() + "-" + version() + ".pom";
   }
 
   @Override
@@ -171,21 +190,5 @@ public final class Rule implements Comparable<Rule> {
   @Override
   public int compareTo(Rule o) {
     return name().compareTo(o.name());
-  }
-
-  public Set<String> getParents() {
-    return parents;
-  }
-
-  public String getRepository() {
-    return repository;
-  }
-
-  public String getSha1() {
-    return sha1;
-  }
-
-  public boolean aliased() {
-    return alias != null;
   }
 }

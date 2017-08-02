@@ -40,7 +40,7 @@ public abstract class AbstractWriter {
   }
 
   protected String formatMavenJar(Rule rule, String ruleName, String indent) {
-    if (rule.aliased()) {
+    if (rule.isAliased()) {
       // If the rule was aliased, then it is already declared somewhere else and we don't need to
       // declare it again.
       return "";

@@ -14,7 +14,7 @@
 
 package com.google.devtools.build.workspace.maven;
 
-import static com.google.devtools.build.workspace.maven.Rule.MAVEN_CENTRAL_URL;
+import static com.google.devtools.build.workspace.maven.Aether.MAVEN_CENTRAL_URL;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.Joiner;

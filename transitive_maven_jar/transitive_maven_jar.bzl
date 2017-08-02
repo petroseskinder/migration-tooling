@@ -22,10 +22,12 @@ def _transitive_maven_jar_impl(rctx):
     _validate_coordinates(rctx)
     arguments = _create_arguments(rctx)
 
-    jar_path = rctx.path(rctx.attr._generate_workspace_tool)
+    jar_path = rctx.path(rctx.attr.generate_workspace_tool)
 
-    # execute the command
-    result = _execute(rctx, "java -jar %s %s" % (jar_path, arguments))
+	# TODO: How do you execute the command
+    # result = _execute(rctx, "java -jar %s %s" % (jar_path, arguments))
+    result = _execute(rctx, "bazel run %s -- %s" % (rctx.attr.generate_workspace_tool, arguments))
+
     rctx.file('%s/BUILD' % rctx.path(''), '', False)
 
 transitive_maven_jar = repository_rule(
@@ -33,7 +35,7 @@ transitive_maven_jar = repository_rule(
         attrs = {
             "artifacts" : attr.string_list(default = [], mandatory = True),
             "_timeout" : attr.int(default = MAX_TIMEOUT),
-			"_generate_workspace_tool" : attr.label(executable = True, allow_files = True, cfg = "host", default = Label("//transitive_maven_jar:generate_workspace_deploy.jar"))
+			"generate_workspace_tool" : attr.label(executable = True, allow_files = True, cfg = "host", default = Label("@generate_workspace_tool//src:generate_workspace"))
 			#TODO(petros): add support for private repositories.
         },
         local = False,

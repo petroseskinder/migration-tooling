@@ -1,5 +1,12 @@
 load('//transitive_maven_jar:transitive_maven_jar.bzl', 'transitive_maven_jar')
 
+http_archive(
+	name = "generate_workspace_tool",
+	url = "https://github.com/bazelbuild/migration-tooling/archive/master.zip",
+	type = "zip",
+	strip_prefix = "migration-tooling-master/",
+)
+
 transitive_maven_jar(
 	name = "dependencies",
 	artifacts = [
@@ -17,7 +24,8 @@ transitive_maven_jar(
 		"com.google.truth:truth:0.30",
 		"org.apache.httpcomponents:httpcore:4.4.6",
 		"org.apache.httpcomponents:httpclient:4.5.3",
-	]
+	],
+	generate_workspace_tool = "@generate_workspace_tool//generate_workspace:generate_workspace"
 )
 
 load("@dependencies//:generate_workspace.bzl", "generated_maven_jars")
